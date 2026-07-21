@@ -86,14 +86,21 @@ public class ConfigManager {
             return;
         }
 
-        String absoluteDbPath = dataDir.resolve("posdb").toAbsolutePath().toString();
+        // Pin the database to an absolute SQLite file inside this app's isolated data dir.
+        // A relative "./data/posdb.db" resolves against the process working directory, which
+        // is unpredictable (and often unwritable) for an installed app. The app uses SQLite
+        // now — emitting an H2 URL here would pair a jdbc:h2 URL with the SQLite driver and
+        // break DB init on a fresh install, sending the app to the backup/error screen
+        // instead of Device Registration.
+        String absoluteDbPath = dataDir.resolve("posdb.db").toAbsolutePath().toString();
         if (os.contains("win")) {
             absoluteDbPath = absoluteDbPath.replace("\\", "/");
         }
 
-        logger.warn("Invalid or test database URL detected ({}). Resetting to production path: {}",
+        logger.warn("Non-absolute or non-SQLite database URL detected ({}). Pinning to data dir: {}",
                 dbUrl, absoluteDbPath);
-        properties.setProperty("database.url", "jdbc:h2:" + absoluteDbPath);
+        properties.setProperty("database.url", "jdbc:sqlite:" + absoluteDbPath);
+        properties.setProperty("database.driver", "org.sqlite.JDBC");
         saveRuntimeConfig();
     }
 
@@ -102,10 +109,12 @@ public class ConfigManager {
             return true;
         }
         String lower = dbUrl.toLowerCase();
-        if (lower.contains(":mem:")) {
+        // In-memory, or a legacy H2 URL, is not valid for the SQLite production app.
+        if (lower.contains(":mem:") || lower.contains(":memory:") || lower.startsWith("jdbc:h2:")) {
             return true;
         }
-        return dbUrl.contains("./data/posdb");
+        // Any relative "./data/…" path must be pinned to an absolute one in the data dir.
+        return dbUrl.contains("./data/") || dbUrl.contains(".\\data\\");
     }
 
     public static ConfigManager getInstance() {
