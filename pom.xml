@@ -96,14 +96,7 @@
             <artifactId>postgresql</artifactId>
             <version>42.7.1</version>
         </dependency>
-        <!-- SQLite (primary embedded DB) -->
-        <dependency>
-            <groupId>org.xerial</groupId>
-            <artifactId>sqlite-jdbc</artifactId>
-            <version>3.45.3.0</version>
-        </dependency>
-        <!-- H2 retained temporarily for the one-time H2->SQLite data import on upgrade.
-             Remove once all installs have migrated. -->
+        <!-- H2 embedded database (primary DB for this build; the data layer uses H2 SQL). -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>

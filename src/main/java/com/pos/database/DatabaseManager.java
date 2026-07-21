@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import com.pos.config.ConfigManager;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.h2.tools.Server;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -22,6 +24,7 @@ public class DatabaseManager {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
     private static DatabaseManager instance;
     private ConfigManager config;
+    private Server webServer; // H2 web console server
     private volatile HikariDataSource dataSource; // pooled connections
 
     // Notified the first time corruption is detected after the database has been
@@ -36,6 +39,7 @@ public class DatabaseManager {
         // Register shutdown hook to ensure connections are closed on JVM exit
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("Shutting down DatabaseManager...");
+            stopWebServer();
             closePool();
         }));
     }
@@ -48,41 +52,22 @@ public class DatabaseManager {
     }
 
     /**
-     * Return the configured SQLite JDBC URL and make sure its parent directory
-     * exists — SQLite (unlike H2) will not auto-create the containing folder.
+     * Build the effective JDBC URL, enabling AUTO_SERVER for file-based databases
+     * so multiple processes/threads can connect concurrently.
      */
     private String buildJdbcUrl() {
         String url = config.getProperty("database.url");
-        ensureDatabaseDirectoryExists(url);
+        // Skip for in-memory databases as AUTO_SERVER is not supported there.
+        if (!url.contains("AUTO_SERVER") && !url.contains(":mem:")) {
+            url += ";AUTO_SERVER=TRUE";
+        }
         return url;
     }
 
     /**
-     * Create the directory that holds the database file (e.g. ./data) if needed.
-     * No-op for in-memory databases.
-     */
-    private void ensureDatabaseDirectoryExists(String url) {
-        String path = extractDatabasePath(url);
-        if (path == null) {
-            return;
-        }
-        try {
-            Path parent = Paths.get(path).toAbsolutePath().getParent();
-            if (parent != null) {
-                java.nio.file.Files.createDirectories(parent);
-            }
-        } catch (Exception e) {
-            logger.warn("Could not create database directory for {}: {}", path, e.getMessage());
-        }
-    }
-
-    /**
-     * Lazily create the shared HikariCP connection pool over a SQLite data source.
-     * SQLite PRAGMAs are configured on the underlying {@link org.sqlite.SQLiteDataSource}
-     * so every pooled connection is opened in WAL mode with foreign keys enforced
-     * and timestamps stored as TEXT. The pool is sized to a single connection: this
-     * is a single-terminal install and SQLite serialises writes anyway, so a larger
-     * pool would only add SQLITE_BUSY contention.
+     * Lazily create the shared HikariCP connection pool. Pooling removes the
+     * per-call TCP connect + auth handshake that H2 AUTO_SERVER mode otherwise
+     * pays on every getConnection(), which is the hot path during scanning/sales.
      */
     private HikariDataSource getDataSource() {
         HikariDataSource ds = dataSource;
@@ -94,40 +79,22 @@ public class DatabaseManager {
                 return dataSource;
             }
             String url = buildJdbcUrl();
-
-            org.sqlite.SQLiteConfig sqliteConfig = new org.sqlite.SQLiteConfig();
-            // WAL + NORMAL is the crash-resistant, fast combination for a desktop app:
-            // committed transactions survive an app/OS crash, and readers never block
-            // the single writer.
-            sqliteConfig.setJournalMode(org.sqlite.SQLiteConfig.JournalMode.WAL);
-            sqliteConfig.setSynchronous(org.sqlite.SQLiteConfig.SynchronousMode.NORMAL);
-            // Wait (rather than fail immediately) when the database is momentarily locked.
-            sqliteConfig.setBusyTimeout(10000);
-            // SQLite has foreign keys OFF by default; the schema relies on ON DELETE
-            // CASCADE, so enforce them on every connection.
-            sqliteConfig.enforceForeignKeys(true);
-            // Store/return timestamps as formatted TEXT so substr(created_at, 1, 10)
-            // date filtering keeps working. Without this, the driver would persist
-            // setTimestamp() values as numeric epoch millis.
-            sqliteConfig.setDateClass("TEXT");
-            sqliteConfig.setDateStringFormat("yyyy-MM-dd HH:mm:ss.SSS");
-
-            org.sqlite.SQLiteDataSource sqliteDs = new org.sqlite.SQLiteDataSource(sqliteConfig);
-            sqliteDs.setUrl(url);
-
             HikariConfig hc = new HikariConfig();
-            hc.setPoolName("pos-sqlite-pool");
-            hc.setDataSource(sqliteDs);
+            hc.setPoolName("pos-h2-pool");
+            hc.setJdbcUrl(url);
+            hc.setUsername(config.getProperty("database.user"));
+            hc.setPassword(config.getProperty("database.password"));
             // Preserve existing transaction semantics: callers manage commit/rollback.
             hc.setAutoCommit(false);
-            hc.setMaximumPoolSize(1);
-            hc.setMinimumIdle(1);
+            hc.setMaximumPoolSize(10);
+            hc.setMinimumIdle(2);
             hc.setConnectionTimeout(10000); // 10s to acquire before failing
             // Log a stack trace if a connection is held longer than 20s without being
-            // returned to the pool. With a single-connection pool a leak freezes the app,
-            // so surfacing it in the logs is important.
+            // returned to the pool. A connection leak drains the pool and makes every
+            // subsequent getConnection() block for the full 10s timeout — surfacing as a
+            // recurring "Not Responding" freeze. This makes any such leak visible in logs.
             hc.setLeakDetectionThreshold(20000);
-            logger.info("Initializing SQLite connection pool: {}", url);
+            logger.info("Initializing H2 connection pool: {}", url.replaceAll("password=[^;]*", "password=***"));
             dataSource = new HikariDataSource(hc);
             return dataSource;
         }
@@ -143,8 +110,7 @@ public class DatabaseManager {
         try {
             return getDataSource().getConnection();
         } catch (SQLException e) {
-            String msg = e.getMessage() == null ? "" : e.getMessage().toLowerCase(Locale.ROOT);
-            if (msg.contains("database is locked") || msg.contains("sqlite_busy")) {
+            if (e.getMessage() != null && e.getMessage().contains("already in use")) {
                 logger.error(
                         "Database is locked. This usually means another instance is running or a connection wasn't closed properly.");
                 logger.error("Try closing all other instances of the application.");
@@ -188,16 +154,13 @@ public class DatabaseManager {
     }
 
     /**
-     * Detect SQLite file corruption from an exception chain. Covers SQLITE_CORRUPT
-     * (result code 11) and SQLITE_NOTADB (result code 26) plus the matching message
-     * text the driver surfaces when an exception is wrapped as a plain SQLException.
+     * Detect H2 MVStore corruption from an exception chain (error 90030).
      */
     public static boolean isCorruptionError(Throwable error) {
         for (Throwable current = error; current != null; current = current.getCause()) {
-            if (current instanceof org.sqlite.SQLiteException sqliteException) {
-                int code = sqliteException.getResultCode().code;
-                // SQLITE_CORRUPT = 11, SQLITE_NOTADB = 26 (primary result codes).
-                if (code == 11 || code == 26 || (code & 0xFF) == 11 || (code & 0xFF) == 26) {
+            if (current instanceof SQLException sqlException) {
+                String sqlState = sqlException.getSQLState();
+                if ("90030".equals(sqlState)) {
                     return true;
                 }
             }
@@ -205,11 +168,10 @@ public class DatabaseManager {
             String message = current.getMessage();
             if (message != null) {
                 String lower = message.toLowerCase(Locale.ROOT);
-                if (lower.contains("malformed")
-                        || lower.contains("not a database")
-                        || lower.contains("disk image")
-                        || lower.contains("file is encrypted")
-                        || lower.contains("database disk image is malformed")) {
+                if (lower.contains("file corrupted")
+                        || lower.contains("file is corrupted")
+                        || lower.contains("mvstoreexception")
+                        || message.contains("90030")) {
                     return true;
                 }
             }
@@ -219,11 +181,12 @@ public class DatabaseManager {
 
     /**
      * Close the connection pool, releasing all open connections. Must be called
-     * before deleting the database files, otherwise SQLite keeps the files locked.
+     * before deleting the database files or issuing a SHUTDOWN, otherwise H2
+     * keeps the files locked.
      */
     public synchronized void closePool() {
         if (dataSource != null) {
-            logger.info("Closing SQLite connection pool");
+            logger.info("Closing H2 connection pool");
             try {
                 dataSource.close();
             } catch (Exception e) {
@@ -313,18 +276,18 @@ public class DatabaseManager {
                         sync_error TEXT,
                         synced BOOLEAN DEFAULT FALSE,
                         voided BOOLEAN DEFAULT FALSE,
-                        voided_at TEXT,
+                        voided_at TIMESTAMP,
                         voided_by VARCHAR(255),
                         void_reason VARCHAR(500),
                         shift_id VARCHAR(255),
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                     """;
 
             // Create sale_items table
             String createSaleItemsTable = """
                     CREATE TABLE IF NOT EXISTS sale_items (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        id INTEGER AUTO_INCREMENT PRIMARY KEY,
                         sale_id VARCHAR(255) NOT NULL,
                         product_id VARCHAR(255),
                         sku VARCHAR(100),
@@ -344,7 +307,7 @@ public class DatabaseManager {
             // Create sale_payments table (for split payments)
             String createSalePaymentsTable = """
                     CREATE TABLE IF NOT EXISTS sale_payments (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        id INTEGER AUTO_INCREMENT PRIMARY KEY,
                         sale_id VARCHAR(255) NOT NULL,
                         payment_method VARCHAR(50) NOT NULL,
                         amount DECIMAL(10,2) NOT NULL,
@@ -368,14 +331,14 @@ public class DatabaseManager {
                         pos_user_id VARCHAR(255),
                         timestamp VARCHAR(50),
                         synced BOOLEAN DEFAULT FALSE,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                     """;
 
             // Create refund_items table
             String createRefundItemsTable = """
                     CREATE TABLE IF NOT EXISTS refund_items (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        id INTEGER AUTO_INCREMENT PRIMARY KEY,
                         refund_id VARCHAR(255) NOT NULL,
                         product_id VARCHAR(255),
                         sku VARCHAR(100),
@@ -449,8 +412,8 @@ public class DatabaseManager {
                         total_discounts DECIMAL(10,2) DEFAULT 0,
                         total_tax DECIMAL(10,2) DEFAULT 0,
                         synced BOOLEAN DEFAULT FALSE,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                     """;
 
@@ -479,8 +442,8 @@ public class DatabaseManager {
                         priority INTEGER DEFAULT 1,
                         retry_count INTEGER DEFAULT 0,
                         last_error TEXT,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        last_retry_at TEXT
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        last_retry_at TIMESTAMP
                     )
                     """;
 
@@ -521,7 +484,7 @@ public class DatabaseManager {
                         user_type VARCHAR(20) NOT NULL,
                         permission VARCHAR(100) NOT NULL,
                         granted BOOLEAN DEFAULT TRUE,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         created_by VARCHAR(255),
                         UNIQUE(user_id, user_type, permission)
                     )
@@ -533,7 +496,7 @@ public class DatabaseManager {
                         role_name VARCHAR(50) NOT NULL,
                         permission VARCHAR(100) NOT NULL,
                         granted BOOLEAN DEFAULT TRUE,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         created_by VARCHAR(255),
                         UNIQUE(role_name, permission)
                     )
@@ -543,7 +506,7 @@ public class DatabaseManager {
                     CREATE TABLE IF NOT EXISTS roles (
                         id VARCHAR(255) PRIMARY KEY,
                         role_name VARCHAR(50) NOT NULL UNIQUE,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         created_by VARCHAR(255)
                     )
                     """;
@@ -561,7 +524,7 @@ public class DatabaseManager {
                         reason VARCHAR(500),
                         user_id VARCHAR(255),
                         user_name VARCHAR(255),
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         synced BOOLEAN DEFAULT FALSE
                     )
                     """;
@@ -583,16 +546,16 @@ public class DatabaseManager {
                         cashier_name VARCHAR(255),
                         cashier_id VARCHAR(255),
                         pos_user_id VARCHAR(255),
-                        held_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        expires_at TEXT,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                        held_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        expires_at TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                     """;
 
             // Create held_sale_items table (for items in held sales)
             String createHeldSaleItemsTable = """
                     CREATE TABLE IF NOT EXISTS held_sale_items (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        id INTEGER AUTO_INCREMENT PRIMARY KEY,
                         hold_id VARCHAR(255) NOT NULL,
                         product_id VARCHAR(255),
                         product_barcode VARCHAR(100),
@@ -667,7 +630,7 @@ public class DatabaseManager {
                         notes TEXT,
                         is_active BOOLEAN DEFAULT TRUE,
                         synced BOOLEAN DEFAULT FALSE,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at VARCHAR(50)
                     )
                     """;
@@ -694,7 +657,7 @@ public class DatabaseManager {
                         shift_id VARCHAR(255),
                         notes TEXT,
                         synced BOOLEAN DEFAULT FALSE,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at VARCHAR(50),
                         FOREIGN KEY (vendor_id) REFERENCES vendors(id)
                     )
@@ -732,13 +695,13 @@ public class DatabaseManager {
                         sale_id VARCHAR(255),
                         department_id VARCHAR(255) NOT NULL,
                         required_age INTEGER NOT NULL,
-                        customer_dob TEXT NOT NULL,
+                        customer_dob DATE NOT NULL,
                         customer_age INTEGER NOT NULL,
                         id_last_four VARCHAR(4),
-                        id_expiration TEXT,
+                        id_expiration DATE,
                         verification_method VARCHAR(20) NOT NULL,
                         verified_by VARCHAR(255) NOT NULL,
-                        verified_at TEXT DEFAULT CURRENT_TIMESTAMP
+                        verified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                     """;
 
@@ -749,13 +712,13 @@ public class DatabaseManager {
                         employee_id VARCHAR(255) NOT NULL,
                         employee_name VARCHAR(255),
                         store_id VARCHAR(255),
-                        clock_in_at TEXT NOT NULL,
-                        clock_out_at TEXT,
+                        clock_in_at TIMESTAMP NOT NULL,
+                        clock_out_at TIMESTAMP,
                         status VARCHAR(20) DEFAULT 'ACTIVE',
                         total_hours DECIMAL(10,2),
                         notes VARCHAR(500),
                         synced BOOLEAN DEFAULT FALSE,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                     """;
 
@@ -773,16 +736,16 @@ public class DatabaseManager {
                         cashier_id VARCHAR(255),
                         pos_user_id VARCHAR(255),
                         shift_id VARCHAR(255),
-                        timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         synced BOOLEAN DEFAULT FALSE,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                     """;
 
             // Create cart_cancellation_items table (for items in canceled carts)
             String createCartCancellationItemsTable = """
                     CREATE TABLE IF NOT EXISTS cart_cancellation_items (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        id INTEGER AUTO_INCREMENT PRIMARY KEY,
                         cancellation_id VARCHAR(255) NOT NULL,
                         product_id VARCHAR(255),
                         product_name VARCHAR(255),
@@ -808,7 +771,7 @@ public class DatabaseManager {
                         is_system BOOLEAN DEFAULT FALSE,
                         is_active BOOLEAN DEFAULT TRUE,
                         display_order INTEGER DEFAULT 0,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at VARCHAR(50)
                     )
                     """;
@@ -830,7 +793,7 @@ public class DatabaseManager {
                         created_by_name VARCHAR(255),
                         timestamp VARCHAR(50),
                         synced BOOLEAN DEFAULT FALSE,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         FOREIGN KEY (category_id) REFERENCES expense_categories(id)
                     )
                     """;
@@ -851,10 +814,10 @@ public class DatabaseManager {
                     CREATE TABLE IF NOT EXISTS cash_check_daily_usage (
                         id VARCHAR(255) PRIMARY KEY,
                         user_id VARCHAR(255) NOT NULL,
-                        usage_date TEXT NOT NULL,
+                        usage_date DATE NOT NULL,
                         operation_count INTEGER DEFAULT 0,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         UNIQUE (user_id, usage_date)
                     )
                     """;
@@ -895,17 +858,6 @@ public class DatabaseManager {
                 stmt.execute(createExpensesTable);
                 stmt.execute(createRoleCashCheckLimitsTable);
                 stmt.execute(createCashCheckDailyUsageTable);
-                // Key/value settings store (upsert target for SyncManager); never had an
-                // explicit CREATE before the SQLite migration.
-                stmt.execute("""
-                        CREATE TABLE IF NOT EXISTS pos_settings (
-                            setting_key VARCHAR(255) PRIMARY KEY,
-                            setting_value TEXT
-                        )
-                        """);
-                // store_settings is upserted by store_id in several places; give it a
-                // UNIQUE constraint so ON CONFLICT(store_id) has a valid target.
-                stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_store_settings_store ON store_settings(store_id)");
 
                 // Create indexes separately (H2 doesn't support inline INDEX in CREATE TABLE)
                 try {
@@ -1095,7 +1047,7 @@ public class DatabaseManager {
                 try {
                     // Check if discount column exists
                     java.sql.DatabaseMetaData metaData = conn.getMetaData();
-                    java.sql.ResultSet columns = metaData.getColumns(null, null, "sale_items", "discount");
+                    java.sql.ResultSet columns = metaData.getColumns(null, null, "SALE_ITEMS", "DISCOUNT");
                     boolean discountColumnExists = columns.next();
                     columns.close();
 
@@ -1114,7 +1066,7 @@ public class DatabaseManager {
                 // don't exist
                 try {
                     java.sql.DatabaseMetaData metaData = conn.getMetaData();
-                    java.sql.ResultSet columns = metaData.getColumns(null, null, "sales", "amount_received");
+                    java.sql.ResultSet columns = metaData.getColumns(null, null, "SALES", "AMOUNT_RECEIVED");
                     boolean amountReceivedColumnExists = columns.next();
                     columns.close();
 
@@ -1154,7 +1106,7 @@ public class DatabaseManager {
 
                 // Migration: Add expires_at column to held_sales if it doesn't exist
                 try {
-                    stmt.execute("ALTER TABLE held_sales ADD COLUMN expires_at TEXT");
+                    stmt.execute("ALTER TABLE held_sales ADD COLUMN expires_at TIMESTAMP");
                     logger.info("Added expires_at column to held_sales table");
                 } catch (SQLException e) {
                     if (!e.getMessage().contains("already exists") && !e.getMessage().contains("duplicate column")) {
@@ -1165,14 +1117,14 @@ public class DatabaseManager {
                 // Migration: Add voided columns to sales table if they don't exist
                 try {
                     java.sql.DatabaseMetaData metaData = conn.getMetaData();
-                    java.sql.ResultSet columns = metaData.getColumns(null, null, "sales", "voided");
+                    java.sql.ResultSet columns = metaData.getColumns(null, null, "SALES", "VOIDED");
                     boolean voidedColumnExists = columns.next();
                     columns.close();
 
                     if (!voidedColumnExists) {
                         logger.info("Adding voided columns to sales table");
                         stmt.execute("ALTER TABLE sales ADD COLUMN voided BOOLEAN DEFAULT FALSE");
-                        stmt.execute("ALTER TABLE sales ADD COLUMN voided_at TEXT");
+                        stmt.execute("ALTER TABLE sales ADD COLUMN voided_at TIMESTAMP");
                         stmt.execute("ALTER TABLE sales ADD COLUMN voided_by VARCHAR(255)");
                         stmt.execute("ALTER TABLE sales ADD COLUMN void_reason VARCHAR(500)");
                         logger.info("Voided columns added successfully");
@@ -1229,7 +1181,7 @@ public class DatabaseManager {
                                 role_name VARCHAR(50) NOT NULL,
                                 permission VARCHAR(100) NOT NULL,
                                 granted BOOLEAN DEFAULT TRUE,
-                                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                 created_by VARCHAR(255),
                                 UNIQUE(role_name, permission)
                             )
@@ -1244,7 +1196,7 @@ public class DatabaseManager {
                             CREATE TABLE IF NOT EXISTS roles (
                                 id VARCHAR(255) PRIMARY KEY,
                                 role_name VARCHAR(50) NOT NULL UNIQUE,
-                                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                 created_by VARCHAR(255)
                             )
                             """);
@@ -1438,8 +1390,8 @@ public class DatabaseManager {
                 // exist
                 try {
                     java.sql.DatabaseMetaData metaData = conn.getMetaData();
-                    java.sql.ResultSet columns = metaData.getColumns(null, null, "global_settings",
-                            "multipack_enabled");
+                    java.sql.ResultSet columns = metaData.getColumns(null, null, "GLOBAL_SETTINGS",
+                            "MULTIPACK_ENABLED");
                     boolean multipackEnabledExists = columns.next();
                     columns.close();
 
@@ -1498,8 +1450,8 @@ public class DatabaseManager {
                 // Migration: minimum sale amount (store policy)
                 try {
                     java.sql.DatabaseMetaData metaData = conn.getMetaData();
-                    java.sql.ResultSet columns = metaData.getColumns(null, null, "store_settings",
-                            "minimum_sale_amount");
+                    java.sql.ResultSet columns = metaData.getColumns(null, null, "STORE_SETTINGS",
+                            "MINIMUM_SALE_AMOUNT");
                     boolean colExists = columns.next();
                     columns.close();
                     if (!colExists) {
@@ -1516,8 +1468,8 @@ public class DatabaseManager {
                 // exist
                 try {
                     java.sql.DatabaseMetaData metaData = conn.getMetaData();
-                    java.sql.ResultSet columns = metaData.getColumns(null, null, "departments",
-                            "multipack_enabled");
+                    java.sql.ResultSet columns = metaData.getColumns(null, null, "DEPARTMENTS",
+                            "MULTIPACK_ENABLED");
                     boolean multipackEnabledExists = columns.next();
                     columns.close();
 
@@ -1543,8 +1495,8 @@ public class DatabaseManager {
                 // Migration: Add manual_cash_check_pin_hash column to global_settings if it doesn't exist
                 try {
                     java.sql.DatabaseMetaData metaData = conn.getMetaData();
-                    java.sql.ResultSet columns = metaData.getColumns(null, null, "global_settings",
-                            "manual_cash_check_pin_hash");
+                    java.sql.ResultSet columns = metaData.getColumns(null, null, "GLOBAL_SETTINGS",
+                            "MANUAL_CASH_CHECK_PIN_HASH");
                     boolean pinHashExists = columns.next();
                     columns.close();
 
@@ -1695,12 +1647,16 @@ public class DatabaseManager {
      */
     public boolean databaseFileExists() {
         try {
-            String dbPath = extractDatabasePath(config.getProperty("database.url"));
-            if (dbPath == null) {
-                return false;
+            String url = config.getProperty("database.url");
+            // Extract file path from JDBC URL (format: jdbc:h2:path or jdbc:h2:file:path)
+            String dbPath = url.replace("jdbc:h2:", "").replace("jdbc:h2:file:", "");
+            // Remove AUTO_SERVER parameter if present
+            if (dbPath.contains(";")) {
+                dbPath = dbPath.substring(0, dbPath.indexOf(";"));
             }
-            // SQLite stores everything in the single .db file named in the URL.
-            File dbFile = new File(dbPath);
+
+            // Check for main database file (.mv.db)
+            File dbFile = new File(dbPath + ".mv.db");
             boolean exists = dbFile.exists() && dbFile.length() > 0;
             logger.debug("Database file exists check: {} (path: {})", exists, dbFile.getAbsolutePath());
             return exists;
@@ -1858,14 +1814,18 @@ public class DatabaseManager {
 
         logger.info("Database path: {}", dbPath);
 
-        // Wait a moment for any connections to close
+        // Step 1: Stop H2 web console server first
+        logger.info("Stopping H2 web console server...");
+        stopWebServer();
+
+        // Step 2: Wait a moment for any connections to close
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
 
-        // Delete all database files directly (most reliable method)
+        // Step 3: Delete all database files directly (most reliable method)
         // We skip trying to connect and drop tables because if the app is running,
         // the database will be locked. Direct file deletion is more reliable.
         logger.info("Deleting database files directly...");
@@ -1875,23 +1835,19 @@ public class DatabaseManager {
     }
 
     /**
-     * Extract database file path from a SQLite JDBC URL.
+     * Extract database file path from H2 JDBC URL.
      * Handles formats like:
-     * - jdbc:sqlite:/absolute/path/to/posdb.db
-     * - jdbc:sqlite:./relative/path/to/posdb.db
-     * - jdbc:sqlite:~/home/path/to/posdb.db
+     * - jdbc:h2:/absolute/path/to/posdb
+     * - jdbc:h2:./relative/path/to/posdb
+     * - jdbc:h2:~/home/path/to/posdb
      */
     private String extractDatabasePath(String dbUrl) {
-        if (dbUrl == null || !dbUrl.startsWith("jdbc:sqlite:")) {
+        // Remove jdbc:h2: prefix
+        if (!dbUrl.startsWith("jdbc:h2:")) {
             return null;
         }
 
-        String path = dbUrl.substring("jdbc:sqlite:".length());
-
-        // In-memory databases have no file path.
-        if (path.isEmpty() || path.startsWith(":memory:") || path.contains("mode=memory")) {
-            return null;
-        }
+        String path = dbUrl.substring("jdbc:h2:".length());
 
         // Remove URL parameters (everything after ;)
         int paramIndex = path.indexOf(';');
@@ -1921,12 +1877,13 @@ public class DatabaseManager {
      * Uses more aggressive deletion with longer waits and more retries.
      */
     private void deleteDatabaseFiles(String dbPath) {
-        // SQLite creates these file types alongside the main database file:
-        // - "" (the main database file itself, e.g. posdb.db)
-        // - -wal (write-ahead log)
-        // - -shm (shared-memory index)
-        // - -journal (rollback journal, used outside WAL mode)
-        String[] extensions = { "", "-wal", "-shm", "-journal" };
+        // H2 creates these file types:
+        // - .mv.db (main database file)
+        // - .trace.db (trace log)
+        // - .lock.db (lock file)
+        // - .newFile (temporary during operations)
+        // - .tempFile (temporary file)
+        String[] extensions = { ".mv.db", ".trace.db", ".lock.db", ".newFile", ".tempFile" };
         int deletedCount = 0;
         int maxRetries = 15; // Increased retries
         int retryDelayMs = 500; // Initial delay
@@ -1936,6 +1893,24 @@ public class DatabaseManager {
         // Close the pool first so it releases its connections and stops handing
         // out new ones; otherwise the database files stay locked.
         closePool();
+
+        // First, try to close all connections by attempting a SHUTDOWN
+        try {
+            logger.info("Attempting to shutdown database gracefully...");
+            try (Connection conn = DriverManager.getConnection(
+                    config.getProperty("database.url").replace(";AUTO_SERVER=TRUE", ""),
+                    config.getProperty("database.user"),
+                    config.getProperty("database.password"))) {
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.execute("SHUTDOWN");
+                    logger.info("Database shutdown command executed");
+                }
+            } catch (SQLException e) {
+                logger.debug("Could not shutdown database (may already be closed): {}", e.getMessage());
+            }
+        } catch (Exception e) {
+            logger.debug("Error during database shutdown attempt: {}", e.getMessage());
+        }
 
         // Wait a bit for connections to close
         try {
@@ -2029,8 +2004,11 @@ public class DatabaseManager {
         if (dbDir != null && dbDir.exists()) {
             String dbFileName = new File(dbPath).getName();
             File[] matchingFiles = dbDir.listFiles((dir,
-                    name) -> name.equals(dbFileName)
-                            || name.startsWith(dbFileName + "-"));
+                    name) -> name.startsWith(dbFileName) && (name.endsWith(".mv.db") ||
+                            name.endsWith(".trace.db") ||
+                            name.endsWith(".lock.db") ||
+                            name.endsWith(".newFile") ||
+                            name.endsWith(".tempFile")));
 
             if (matchingFiles != null) {
                 for (File file : matchingFiles) {
@@ -2081,9 +2059,10 @@ public class DatabaseManager {
             logger.error("Database path: {}", dbPath);
             logger.error("If files are locked:");
             logger.error("  1. Close all POS application instances");
-            logger.error("  2. Wait a few seconds");
-            logger.error("  3. Try again or restart the application");
-            logger.error("  4. Or manually delete: rm -rf \"{}\"*", dbPath);
+            logger.error("  2. Close H2 web console (if open in browser)");
+            logger.error("  3. Wait a few seconds");
+            logger.error("  4. Try again or restart the application");
+            logger.error("  5. Or manually delete: rm -rf \"{}\"*", dbPath);
             throw new RuntimeException(
                     "Failed to delete database files. " + remainingFiles + " file(s) are still locked.");
         } else if (remainingFiles > 0) {
@@ -2096,4 +2075,141 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Start H2 web console server for database viewing
+     * The console will be accessible at http://localhost:8082
+     * 
+     * @param port Port number for the web console (default: 8082)
+     * @return true if server started successfully, false otherwise
+     */
+    public boolean startWebServer(int port) {
+        try {
+            if (webServer != null && webServer.isRunning(false)) {
+                logger.info("H2 web console server is already running on port {}", port);
+                return true;
+            }
+
+            // Stop any existing server first
+            if (webServer != null) {
+                try {
+                    webServer.stop();
+                } catch (Exception e) {
+                    logger.debug("Error stopping existing server: {}", e.getMessage());
+                }
+                webServer = null;
+            }
+
+            // Get database URL and extract path
+            String dbUrl = config.getProperty("database.url");
+            String dbPath = extractDatabasePath(dbUrl);
+
+            if (dbPath == null) {
+                logger.error("Could not extract database path from URL: {}", dbUrl);
+                return false;
+            }
+
+            // Get the directory containing the database file
+            File dbFile = new File(dbPath);
+            String baseDir = dbFile.getParent();
+            if (baseDir == null || baseDir.isEmpty()) {
+                baseDir = System.getProperty("user.dir");
+            }
+
+            // Convert to absolute path
+            File baseDirFile = new File(baseDir);
+            baseDir = baseDirFile.getAbsolutePath();
+
+            // Get the database file name (without path) for relative URL
+            String dbFileName = dbFile.getName();
+
+            logger.info("Starting H2 web console server on port {} with baseDir: {}", port, baseDir);
+            logger.info("Database path: {}", dbPath);
+            logger.info("Database file name: {}", dbFileName);
+
+            // Start H2 web server with proper configuration
+            webServer = Server.createWebServer(
+                    "-web",
+                    "-webAllowOthers",
+                    "-webPort", String.valueOf(port),
+                    "-baseDir", baseDir);
+
+            webServer.start();
+
+            // Verify it's actually running
+            if (!webServer.isRunning(false)) {
+                logger.error("H2 web console server failed to start");
+                webServer = null;
+                return false;
+            }
+
+            logger.info("H2 web console server started successfully");
+            logger.info("Access the database console at: http://localhost:{}/", port);
+
+            // Provide the correct JDBC URL format for the console
+            String dbNameWithoutExt = dbFileName;
+            if (dbNameWithoutExt.endsWith(".mv.db")) {
+                dbNameWithoutExt = dbNameWithoutExt.substring(0, dbNameWithoutExt.length() - 6);
+            }
+
+            // Remove AUTO_SERVER parameter for console
+            String consoleUrl = dbUrl;
+            if (consoleUrl.contains(";AUTO_SERVER")) {
+                consoleUrl = consoleUrl.replaceAll(";AUTO_SERVER=TRUE", "").replaceAll(";AUTO_SERVER=true", "");
+            }
+
+            // Create relative URL (relative to baseDir)
+            String relativeUrl = "jdbc:h2:" + dbNameWithoutExt;
+
+            logger.info("=== H2 Console Connection Information ===");
+            logger.info("JDBC URL (relative to baseDir): {}", relativeUrl);
+            logger.info("JDBC URL (absolute): {}", consoleUrl);
+            logger.info("Username: {}", config.getProperty("database.user", "sa"));
+            logger.info("Password: {}", config.getProperty("database.password", "").isEmpty() ? "(empty)" : "***");
+            logger.info("Base Directory: {}", baseDir);
+            logger.info("Note: Use the relative JDBC URL '{}' in the H2 console login form", relativeUrl);
+
+            return true;
+        } catch (SQLException e) {
+            logger.error("Failed to start H2 web console server: {}", e.getMessage(), e);
+            webServer = null;
+            return false;
+        } catch (Exception e) {
+            logger.error("Unexpected error starting H2 web console server: {}", e.getMessage(), e);
+            webServer = null;
+            return false;
+        }
+    }
+
+    /**
+     * Start H2 web console server on default port 8082
+     * 
+     * @return true if server started successfully, false otherwise
+     */
+    public boolean startWebServer() {
+        return startWebServer(8082);
+    }
+
+    /**
+     * Stop H2 web console server
+     */
+    public void stopWebServer() {
+        if (webServer != null && webServer.isRunning(false)) {
+            try {
+                webServer.stop();
+                logger.info("H2 web console server stopped");
+            } catch (Exception e) {
+                logger.warn("Error stopping H2 web console server", e);
+            }
+            webServer = null;
+        }
+    }
+
+    /**
+     * Check if H2 web console server is running
+     * 
+     * @return true if server is running, false otherwise
+     */
+    public boolean isWebServerRunning() {
+        return webServer != null && webServer.isRunning(false);
+    }
 }
