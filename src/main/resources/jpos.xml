@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JposEntries>
+    <!-- 
+        JavaPOS Configuration File
+        Configure your hardware devices here
+    -->
+    
+    <!-- Receipt Printer Configuration -->
+    <JposEntry logicalName="POSPrinter">
+        <property name="vendorName" value="Star Micronics"/>
+        <property name="deviceCategory" value="POSPrinter"/>
+        <!-- 
+            Update serviceClass with your printer's service object class
+            Example: com.starmicronics.javapos.services.POSPrinterService
+        -->
+        <property name="serviceClass" value="jpos.POSPrinter"/>
+        <!-- 
+            Port configuration:
+            - USB: portName="USB"
+            - Serial: portName="COM1" (Windows) or "/dev/ttyUSB0" (Linux)
+            - Network: portName="TCP/IP:192.168.1.100"
+        -->
+        <property name="portName" value="USB"/>
+    </JposEntry>
+    
+    <!-- Barcode Scanner Configuration (HP Scanner) -->
+    <JposEntry logicalName="Scanner">
+        <property name="vendorName" value="HP"/>
+        <property name="deviceCategory" value="Scanner"/>
+        <!-- 
+            HP Scanner Configuration:
+            1. For HP OPOS/JavaPOS drivers, use: hp.opos.jpos.ScannerService
+            2. For HP Engage scanners: hp.opos.jpos.services.ScannerService
+            3. Download HP POS Device Manager from: https://support.hp.com/
+            
+            If using keyboard wedge mode (USB HID), set useKeyboardMode to true
+            in application.properties - no JavaPOS driver needed.
+        -->
+        <property name="serviceClass" value="hp.opos.jpos.ScannerService"/>
+        <property name="portName" value="USB"/>
+        <!-- Optional: specify COM port if using serial connection -->
+        <!-- <property name="portName" value="COM3"/> -->
+    </JposEntry>
+    
+    <!-- Cash Drawer Configuration -->
+    <JposEntry logicalName="CashDrawer">
+        <property name="vendorName" value="Star Micronics"/>
+        <property name="deviceCategory" value="CashDrawer"/>
+        <!-- 
+            Update serviceClass with your cash drawer's service object class
+            Example: com.starmicronics.javapos.services.CashDrawerService
+        -->
+        <property name="serviceClass" value="jpos.CashDrawer"/>
+        <property name="portName" value="USB"/>
+    </JposEntry>
+    
+    <!-- 
+        Additional devices can be added here:
+        - MSR (Magnetic Stripe Reader)
+        - PINPad
+        - LineDisplay
+        - Scale
+        etc.
+    -->
+</JposEntries>
+

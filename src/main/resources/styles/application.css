@@ -1,0 +1,4573 @@
+/* Pasal POS Modern Stylesheet */
+
+.root {
+  -fx-font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  -fx-font-size: 14px;
+  -fx-background-color: #f5f7fa;
+}
+
+/* =====================================================
+   TOUCH TERMINAL - Revolutionary Touch-First Design
+   
+   DESIGN PRINCIPLES:
+   - 64px minimum touch targets
+   - Organic rounded shapes (24px radius)
+   - Glass morphism effects
+   - Nature-inspired gradient palette
+   - Zero sharp corners
+   ===================================================== */
+
+/* === MAIN LAYOUT === */
+.touch-terminal-layout {
+  -fx-background-color: #f1f5f9;
+}
+
+.touch-main-layout {
+  -fx-background-color: #f1f5f9;
+}
+
+/* === LEFT PANEL - GLASS CART === */
+.touch-cart-panel {
+  -fx-background-color: linear-gradient(
+    to bottom,
+    #0f172a 0%,
+    #1e293b 50%,
+    #0f172a 100%
+  );
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 20, 0, 6, 0);
+}
+
+.touch-cart-container {
+  -fx-background-color: transparent;
+}
+
+.touch-header {
+  -fx-background-color: transparent;
+}
+
+.touch-receipt-header-row {
+  -fx-padding: 0 0 1 0;
+}
+
+/* Brand Capsule - Compact */
+.touch-brand-capsule {
+  -fx-background-color: rgba(255, 255, 255, 0.08);
+  -fx-background-radius: 16;
+  -fx-border-color: rgba(255, 255, 255, 0.12);
+  -fx-border-width: 1;
+  -fx-border-radius: 16;
+}
+
+.touch-store-name {
+  -fx-font-size: 12px;
+  -fx-font-weight: 700;
+  -fx-text-fill: white;
+}
+
+.touch-store-name-compact {
+  -fx-font-size: 14px;
+  -fx-font-weight: 800;
+  -fx-text-fill: white;
+}
+
+.touch-tx-hash {
+  -fx-font-size: 11px;
+  -fx-font-weight: 800;
+  -fx-text-fill: rgba(255, 255, 255, 0.4);
+}
+
+.touch-tx-number {
+  -fx-font-size: 12px;
+  -fx-font-weight: 700;
+  -fx-font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  -fx-text-fill: #22c55e;
+}
+
+.touch-tx-number-compact {
+  -fx-font-size: 14px;
+  -fx-font-weight: 800;
+}
+
+.touch-receipt-meta-row {
+  -fx-padding: 0;
+}
+
+.touch-meta-text {
+  -fx-font-size: 11px;
+  -fx-text-fill: rgba(255, 255, 255, 0.6);
+}
+
+/* Customer Banner - Touch friendly */
+.touch-customer-banner {
+  -fx-background-color: rgba(5, 150, 105, 0.25);
+  -fx-padding: 14 16;
+  -fx-font-size: 14px;
+  -fx-text-fill: #22c55e;
+  -fx-font-weight: 700;
+  -fx-border-color: rgba(5, 150, 105, 0.35);
+  -fx-border-width: 1 0;
+}
+
+/* Cart Table - Large touch rows */
+.touch-cart-table {
+  -fx-background-color: transparent;
+  -fx-border-width: 0;
+}
+
+.touch-cart-table .column-header-background {
+  -fx-background-color: rgba(255, 255, 255, 0.04);
+  -fx-border-color: rgba(255, 255, 255, 0.06);
+  -fx-border-width: 0 0 1 0;
+}
+
+.touch-cart-table .column-header {
+  -fx-background-color: transparent;
+  -fx-font-size: 10px;
+  -fx-font-weight: 800;
+  -fx-text-fill: rgba(255, 255, 255, 0.3);
+  -fx-letter-spacing: 1.5px;
+}
+
+.touch-cart-table .table-row-cell {
+  -fx-background-color: transparent;
+  -fx-border-color: rgba(255, 255, 255, 0.05);
+  -fx-border-width: 0 0 1 0;
+  -fx-min-height: 72;
+}
+
+.touch-cart-table .table-row-cell:selected {
+  -fx-background-color: rgba(5, 150, 105, 0.2);
+}
+
+.touch-cart-table .table-row-cell:hover {
+  -fx-background-color: rgba(255, 255, 255, 0.03);
+}
+
+.touch-empty-cart {
+  -fx-font-size: 17px;
+  -fx-text-fill: rgba(255, 255, 255, 0.26);
+  -fx-font-weight: 500;
+  -fx-alignment: center;
+}
+
+/* Multiplier Pill */
+.touch-multiplier-pill {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #f59e0b 0%,
+    #d97706 100%
+  );
+  -fx-padding: 12 16;
+  -fx-font-size: 16px;
+  -fx-font-weight: 800;
+  -fx-text-fill: white;
+  -fx-alignment: center;
+  -fx-background-radius: 12;
+}
+
+/* Keypad Section - Compact for small screens */
+.touch-keypad-section {
+  -fx-background-color: rgba(255, 255, 255, 0.03);
+  -fx-border-color: rgba(255, 255, 255, 0.06);
+  -fx-border-width: 1 0 0 0;
+}
+
+.touch-input-display {
+  -fx-background-color: rgba(5, 150, 105, 0.12);
+  -fx-font-size: 18px;
+  -fx-font-weight: 800;
+  -fx-text-fill: #22c55e;
+  -fx-border-color: rgba(5, 150, 105, 0.25);
+  -fx-border-width: 1;
+  -fx-border-radius: 8;
+  -fx-background-radius: 8;
+  -fx-alignment: center;
+}
+
+/* Compact Keypad - ULTRA Small buttons for small screens */
+.touch-mega-keypad {
+  -fx-background-color: transparent;
+}
+
+.touch-mega-keypad .keypad-button,
+.touch-mega-keypad .keypad-number-button {
+  -fx-background-color: rgba(255, 255, 255, 0.1) !important;
+  -fx-text-fill: white !important;
+  -fx-font-size: 18px !important;
+  -fx-font-weight: 800 !important;
+  -fx-background-radius: 8;
+  -fx-border-radius: 8;
+  -fx-border-color: rgba(255, 255, 255, 0.12);
+  -fx-border-width: 1;
+  -fx-min-width: 40px;
+  -fx-min-height: 35px;
+}
+
+.touch-mega-keypad .keypad-button:pressed,
+.touch-mega-keypad .keypad-number-button:pressed {
+  -fx-background-color: rgba(255, 255, 255, 0.2) !important;
+  -fx-scale-x: 0.95;
+  -fx-scale-y: 0.95;
+}
+
+.touch-mega-keypad .keypad-clear-button {
+  -fx-background-color: rgba(239, 68, 68, 0.85) !important;
+  -fx-border-color: #ef4444 !important;
+}
+
+.touch-mega-keypad .keypad-qty-button {
+  -fx-background-color: rgba(59, 130, 246, 0.85) !important;
+  -fx-border-color: #3b82f6 !important;
+  -fx-font-size: 15px !important;
+}
+
+.touch-mega-keypad .keypad-enter-button {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #059669 0%,
+    #0891b2 100%
+  ) !important;
+  -fx-border-color: #059669 !important;
+}
+
+/* === FLOATING KEYBOARD === */
+.floating-keyboard-root {
+  -fx-background-color: rgba(15, 23, 42, 0.96);
+  -fx-background-radius: 16;
+  -fx-border-radius: 16;
+  -fx-border-color: rgba(148, 163, 184, 0.6);
+  -fx-border-width: 1;
+  -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.85), 24, 0.3, 0, 12);
+}
+
+.floating-keyboard-titlebar {
+  -fx-background-color: linear-gradient(to right, #0f172a 0%, #1e293b 100%);
+  -fx-background-radius: 16 16 0 0;
+  -fx-padding: 10 16;
+  -fx-alignment: center-left;
+  -fx-spacing: 8;
+}
+
+.floating-keyboard-titlebar Label {
+  -fx-text-fill: #e5e7eb;
+  -fx-font-size: 14px;
+  -fx-font-weight: 600;
+}
+
+.floating-keyboard-close-button {
+  -fx-background-color: transparent;
+  -fx-text-fill: #9ca3af;
+  -fx-font-size: 14px;
+  -fx-font-weight: 700;
+  -fx-background-radius: 999;
+  -fx-min-width: 32;
+  -fx-min-height: 32;
+}
+
+.floating-keyboard-close-button:hover {
+  -fx-background-color: rgba(248, 113, 113, 0.16);
+  -fx-text-fill: #fecaca;
+}
+
+.floating-keyboard-root .button {
+  -fx-background-color: rgba(148, 163, 184, 0.18);
+  -fx-text-fill: #e5e7eb;
+  -fx-font-size: 15px;
+  -fx-font-weight: 600;
+  -fx-background-radius: 10;
+  -fx-border-radius: 10;
+  -fx-border-color: rgba(148, 163, 184, 0.35);
+  -fx-border-width: 1;
+  -fx-min-height: 44;
+  -fx-pref-height: 44;
+  -fx-max-height: 44;
+  -fx-min-width: 0;
+  -fx-padding: 4 2;
+  -fx-text-overrun: clip;
+}
+
+.floating-keyboard-root .button:hover {
+  -fx-background-color: rgba(148, 163, 184, 0.3);
+}
+
+.floating-keyboard-root .button:pressed {
+  -fx-background-color: rgba(59, 130, 246, 0.65);
+  -fx-border-color: rgba(59, 130, 246, 0.9);
+  -fx-scale-x: 0.97;
+  -fx-scale-y: 0.97;
+}
+
+.floating-keyboard-root .button[text=\"BACKSPACE\"],
+.floating-keyboard-root .button[text=\"CLEAR\"],
+.floating-keyboard-root .button[text=\"ENTER\"],
+.floating-keyboard-root .button[text=\"SPACE\"] {
+  -fx-font-size: 12px;
+}
+
+/* 12–13" displays and smaller POS screens */
+.floating-keyboard-compact .button {
+  -fx-font-size: 14px;
+  -fx-min-height: 38;
+  -fx-pref-height: 38;
+  -fx-max-height: 38;
+}
+
+.floating-keyboard-compact .button[text=\"BACKSPACE\"],
+.floating-keyboard-compact .button[text=\"CLEAR\"],
+.floating-keyboard-compact .button[text=\"ENTER\"],
+.floating-keyboard-compact .button[text=\"SPACE\"] {
+  -fx-font-size: 11px;
+}
+
+.floating-keyboard-compact .floating-keyboard-titlebar {
+  -fx-padding: 6 12;
+}
+
+.floating-keyboard-compact .floating-keyboard-titlebar Label {
+  -fx-font-size: 13px;
+}
+
+/* === CENTER PANEL - MEGA DISCOVERY === */
+.touch-discovery-panel {
+  -fx-background-color: #f8fafc;
+}
+
+.touch-discovery-container {
+  -fx-background-color: #f8fafc;
+}
+
+.touch-mega-grid-view {
+  -fx-background-color: #f8fafc;
+}
+
+.touch-discovery-header {
+  -fx-background-color: white;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 0 0 1 0;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.02), 4, 0, 0, 2);
+}
+
+.touch-greeting-xl {
+  -fx-font-size: 26px;
+  -fx-font-weight: 800;
+  -fx-text-fill: #1e293b;
+}
+
+.touch-greeting-sub {
+  -fx-font-size: 14px;
+  -fx-text-fill: #64748b;
+}
+
+/* MEGA Search Button */
+.touch-mega-search-btn {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #059669 0%,
+    #0891b2 100%
+  );
+  -fx-text-fill: white;
+  -fx-font-size: 15px;
+  -fx-font-weight: 700;
+  -fx-padding: 16 28;
+  -fx-background-radius: 32;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(5, 150, 105, 0.35), 12, 0, 0, 5);
+}
+
+.touch-mega-search-btn:pressed {
+  -fx-scale-x: 0.97;
+  -fx-scale-y: 0.97;
+}
+
+.touch-smooth-scroll {
+  -fx-background-color: transparent;
+  -fx-background: transparent;
+}
+
+.touch-smooth-scroll > .viewport {
+  -fx-background-color: transparent;
+}
+
+.touch-mega-tile-grid {
+  -fx-background-color: transparent;
+}
+
+/* MEGA Category Tiles - Extra large touch targets */
+.touch-mega-category-tile {
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 12, 0, 0, 6);
+  -fx-border-width: 0;
+}
+
+.touch-mega-category-tile:pressed {
+  -fx-scale-x: 0.96;
+  -fx-scale-y: 0.96;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 6, 0, 0, 3);
+}
+
+.touch-category-icon {
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2);
+}
+
+.touch-category-label {
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 2, 0, 0, 1);
+}
+
+/* Product View */
+.touch-product-view {
+  -fx-background-color: #f8fafc;
+}
+
+.touch-product-header {
+  -fx-background-color: white;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 0 0 1 0;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.02), 4, 0, 0, 2);
+}
+
+.touch-back-orb {
+  -fx-background-color: #f1f5f9;
+  -fx-text-fill: #475569;
+  -fx-font-size: 14px;
+  -fx-font-weight: 700;
+  -fx-background-radius: 20;
+  -fx-border-width: 0;
+  -fx-cursor: hand;
+}
+
+.touch-back-orb:pressed {
+  -fx-background-color: #e2e8f0;
+  -fx-scale-x: 0.97;
+  -fx-scale-y: 0.97;
+}
+
+.touch-category-title {
+  -fx-font-size: 22px;
+  -fx-font-weight: 800;
+  -fx-text-fill: #1e293b;
+  -fx-padding: 0 0 0 12;
+}
+
+.touch-count-pill {
+  -fx-background-color: #e2e8f0;
+  -fx-text-fill: #64748b;
+  -fx-font-size: 12px;
+  -fx-font-weight: 600;
+  -fx-padding: 6 14;
+  -fx-background-radius: 20;
+}
+
+.touch-search-orb {
+  -fx-background-color: #6366f1;
+  -fx-text-fill: white;
+  -fx-font-size: 14px;
+  -fx-font-weight: 700;
+  -fx-padding: 14 20;
+  -fx-background-radius: 20;
+  -fx-border-width: 0;
+  -fx-cursor: hand;
+}
+
+.touch-search-orb:pressed {
+  -fx-background-color: #4f46e5;
+  -fx-scale-x: 0.97;
+  -fx-scale-y: 0.97;
+}
+
+.touch-product-mega-grid {
+  -fx-background-color: transparent;
+}
+
+/* MEGA Product Tiles */
+.touch-product-tile {
+  -fx-cursor: hand;
+  -fx-border-width: 0;
+}
+
+.touch-product-tile:pressed {
+  -fx-scale-x: 0.96;
+  -fx-scale-y: 0.96;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 4, 0, 0, 2);
+}
+
+.touch-product-tile:disabled {
+  -fx-opacity: 0.4;
+}
+
+/* Pagination */
+.touch-pagination {
+  -fx-background-color: white;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 1 0 0 0;
+}
+
+.touch-page-btn {
+  -fx-background-color: #f1f5f9;
+  -fx-text-fill: #475569;
+  -fx-font-size: 14px;
+  -fx-font-weight: 700;
+  -fx-background-radius: 16;
+  -fx-border-width: 0;
+  -fx-cursor: hand;
+}
+
+.touch-page-btn:pressed {
+  -fx-background-color: #e2e8f0;
+  -fx-scale-x: 0.97;
+  -fx-scale-y: 0.97;
+}
+
+.touch-page-btn:disabled {
+  -fx-opacity: 0.35;
+}
+
+.touch-loading-spinner {
+  -fx-progress-color: #059669;
+}
+
+/* === TOTALS WAVE - Premium Deep Slate-Indigo Gradient === */
+.touch-totals-wave {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #0f172a 0%,   /* Deep Slate */
+    #1e293b 45%,  /* Mid Slate */
+    #312e81 100%  /* Indigo Accent */
+  );
+  -fx-padding: 0;
+  -fx-border-color: rgba(255, 255, 255, 0.12);
+  -fx-border-width: 1 0 0 0;
+}
+
+.touch-summary-glass {
+  -fx-background-color: rgba(255, 255, 255, 0.04); /* Ultra-light frosting */
+  -fx-background-radius: 0;
+}
+
+.touch-item-pill {
+  -fx-background-color: rgba(255, 255, 255, 0.2);
+  -fx-text-fill: white;
+  -fx-font-size: 10px;
+  -fx-font-weight: 700;
+  -fx-padding: 4 12;
+  -fx-background-radius: 16;
+}
+
+.touch-detail-chip {
+  -fx-padding: 4 8;
+}
+
+.touch-label-mini {
+  -fx-font-size: 8px;
+  -fx-font-weight: 800;
+  -fx-text-fill: rgba(255, 255, 255, 0.8) !important; /* More vibrant label */
+  -fx-letter-spacing: 1px;
+}
+
+.touch-value-medium {
+  -fx-font-size: 15px;
+  -fx-font-weight: 800;
+  -fx-text-fill: #ffffff !important; /* Forces pure white contrast */
+  -fx-font-family: "JetBrains Mono", "SF Mono", monospace;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+}
+
+.touch-glow-divider {
+  -fx-background-color: rgba(255, 255, 255, 0.2);
+  -fx-background-radius: 1;
+}
+
+.touch-mega-total {
+  -fx-padding: 4 0 0 0;
+}
+
+.touch-total-label {
+  -fx-font-size: 10px;
+  -fx-font-weight: 800;
+  -fx-text-fill: rgba(255, 255, 255, 0.9) !important; /* Higher contrast label */
+  -fx-letter-spacing: 1.2px;
+}
+
+.touch-currency-symbol {
+  -fx-font-size: 18px;
+  -fx-text-fill: #ffffff !important;
+  -fx-font-weight: 700;
+  -fx-padding: 0 0 2 0;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 3, 0, 0, 1);
+}
+
+.touch-mega-amount {
+  -fx-font-size: 32px;
+  -fx-font-weight: 900;
+  -fx-text-fill: #ffffff !important; /* Forced pure white for visibility */
+  -fx-font-family: "JetBrains Mono", "SF Mono", monospace;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0, 0, 4); /* Stronger shadow for pop */
+}
+
+/* === RIGHT PANEL - ACTION DOCK === */
+.touch-action-dock {
+  -fx-background-color: white;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 0 0 0 1;
+}
+
+.touch-action-container {
+  -fx-background-color: white;
+}
+
+.touch-action-header {
+  -fx-background-color: #f8fafc;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 0 0 1 0;
+}
+
+/* Action Orb Buttons - Large touch targets */
+.touch-action-orb {
+  -fx-background-radius: 20;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 6, 0, 0, 3);
+  -fx-border-width: 0;
+}
+
+.touch-action-orb:pressed {
+  -fx-scale-x: 0.96;
+  -fx-scale-y: 0.96;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 3, 0, 0, 1);
+}
+
+.touch-orb-amber {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #f59e0b 0%,
+    #d97706 100%
+  );
+}
+
+.touch-orb-teal {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #0d9488 0%,
+    #0891b2 100%
+  );
+}
+
+.touch-orb-indigo {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #6366f1 0%,
+    #7c3aed 100%
+  );
+}
+
+.touch-orb-orange {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #f97316 0%,
+    #ea580c 100%
+  );
+}
+
+.touch-orb-slate {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #64748b 0%,
+    #475569 100%
+  );
+}
+
+.touch-orb-rose {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #f43f5e 0%,
+    #e11d48 100%
+  );
+}
+
+.touch-orb-red {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #ef4444 0%,
+    #dc2626 100%
+  );
+}
+
+.touch-orb-emerald {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #10b981 0%,
+    #059669 100%
+  );
+}
+
+.touch-orb-green {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #22c55e 0%,
+    #16a34a 100%
+  );
+}
+
+.touch-checkout-footer {
+  -fx-background-color: #f8fafc;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 1 0 0 0;
+}
+
+.touch-mega-checkout {
+  -fx-cursor: hand;
+}
+
+.touch-mega-checkout:pressed {
+  -fx-scale-x: 0.98;
+  -fx-scale-y: 0.98;
+}
+
+/* --- Login Screen Styles --- */
+
+.login-root {
+  -fx-background-color: white;
+}
+
+.login-left-panel {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #667eea 0%,
+    #764ba2 50%,
+    #f093fb 100%
+  );
+  -fx-padding: 60;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 25, 0, 0, 0);
+}
+
+.login-right-panel {
+  -fx-background-color: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+  -fx-padding: 60;
+}
+
+.login-logo-container {
+  -fx-alignment: center;
+}
+
+.login-logo-icon {
+  -fx-font-size: 120px;
+  -fx-text-fill: rgba(255, 255, 255, 0.95);
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 15, 0, 0, 2);
+}
+
+.login-welcome-text {
+  -fx-font-size: 42px;
+  -fx-font-weight: 700;
+  -fx-text-fill: white;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 12, 0, 0, 2);
+  -fx-letter-spacing: -0.5px;
+}
+
+.login-subtitle-text {
+  -fx-font-size: 18px;
+  -fx-text-fill: rgba(255, 255, 255, 0.9);
+  -fx-font-weight: 400;
+  -fx-letter-spacing: 0.3px;
+}
+
+.login-date-container {
+  -fx-background-color: rgba(255, 255, 255, 0.15);
+  -fx-background-radius: 16;
+  -fx-padding: 16 24;
+}
+
+.login-date-label {
+  -fx-text-fill: rgba(255, 255, 255, 0.95);
+  -fx-font-size: 15px;
+  -fx-font-weight: 500;
+  -fx-letter-spacing: 0.2px;
+}
+
+.login-store-badge {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #667eea 0%,
+    #764ba2 100%
+  );
+  -fx-background-radius: 24;
+  -fx-padding: 10 24;
+  -fx-text-fill: white;
+  -fx-font-weight: 600;
+  -fx-font-size: 13px;
+  -fx-letter-spacing: 0.5px;
+  -fx-effect: dropshadow(gaussian, rgba(102, 126, 234, 0.4), 8, 0, 0, 2);
+}
+
+.login-form-card {
+  -fx-background-color: white;
+  -fx-background-radius: 32;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 30, 0, 0, 6);
+  -fx-border-color: rgba(102, 126, 234, 0.1);
+  -fx-border-width: 1.5;
+  -fx-border-radius: 32;
+}
+
+.login-form-title {
+  -fx-font-size: 32px;
+  -fx-font-weight: 700;
+  -fx-text-fill: #1a1a1a;
+  -fx-letter-spacing: -0.5px;
+}
+
+.login-form-subtitle {
+  -fx-font-size: 15px;
+  -fx-text-fill: #666;
+  -fx-font-weight: 400;
+  -fx-letter-spacing: 0.2px;
+}
+
+.login-field-label {
+  -fx-font-weight: 600;
+  -fx-font-size: 13px;
+  -fx-text-fill: #333;
+  -fx-letter-spacing: 0.3px;
+}
+
+.login-input-field {
+  -fx-font-size: 17px;
+  -fx-padding: 18px 24px;
+  -fx-background-radius: 16;
+  -fx-border-radius: 16;
+  -fx-border-color: #e0e0e0;
+  -fx-border-width: 2;
+  -fx-background-color: #fafafa;
+  -fx-text-fill: #1a1a1a;
+}
+
+.login-input-field:focused {
+  -fx-border-color: #667eea;
+  -fx-background-color: white;
+  -fx-effect: dropshadow(gaussian, rgba(102, 126, 234, 0.25), 12, 0, 0, 4);
+  -fx-border-width: 3;
+}
+
+.login-combo-box {
+  -fx-font-size: 17px;
+  -fx-background-radius: 16;
+  -fx-border-radius: 16;
+  -fx-border-color: #e0e0e0;
+  -fx-border-width: 2;
+  -fx-background-color: #fafafa;
+  -fx-text-fill: #1a1a1a;
+}
+
+.login-combo-box:focused {
+  -fx-border-color: #667eea;
+  -fx-border-width: 3;
+  -fx-background-color: white;
+  -fx-effect: dropshadow(gaussian, rgba(102, 126, 234, 0.25), 12, 0, 0, 4);
+}
+
+.login-combo-box .arrow-button {
+  -fx-background-color: transparent;
+}
+
+.login-combo-box .arrow {
+  -fx-background-color: #667eea;
+}
+
+/* ========================================
+   RETAIL PRO KEYPAD - Dark Theme Style
+   ======================================== */
+
+.retail-pro-keypad {
+  -fx-background-color: transparent;
+  -fx-padding: 0;
+}
+
+.retail-pro-keypad .keypad-button,
+.retail-pro-keypad .keypad-number-button {
+  -fx-background-color: rgba(255, 255, 255, 0.12) !important;
+  -fx-text-fill: white !important;
+  -fx-font-size: 26px !important;
+  -fx-font-weight: 700 !important;
+  -fx-background-radius: 10;
+  -fx-border-radius: 10;
+  -fx-border-color: rgba(255, 255, 255, 0.15);
+  -fx-border-width: 1;
+  -fx-cursor: hand;
+}
+
+.retail-pro-keypad .keypad-button:hover,
+.retail-pro-keypad .keypad-number-button:hover {
+  -fx-background-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+.retail-pro-keypad .keypad-button:pressed,
+.retail-pro-keypad .keypad-number-button:pressed {
+  -fx-background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.retail-pro-keypad .keypad-clear-button {
+  -fx-background-color: rgba(239, 68, 68, 0.8) !important;
+  -fx-text-fill: white !important;
+  -fx-border-color: rgba(239, 68, 68, 0.9) !important;
+}
+
+.retail-pro-keypad .keypad-clear-button:hover {
+  -fx-background-color: rgba(220, 38, 38, 0.9) !important;
+}
+
+.retail-pro-keypad .keypad-backspace-button {
+  -fx-background-color: rgba(245, 158, 11, 0.8) !important;
+  -fx-text-fill: white !important;
+  -fx-border-color: rgba(245, 158, 11, 0.9) !important;
+}
+
+.retail-pro-keypad .keypad-backspace-button:hover {
+  -fx-background-color: rgba(217, 119, 6, 0.9) !important;
+}
+
+.retail-pro-keypad .keypad-enter-button {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #10b981 0%,
+    #059669 100%
+  ) !important;
+  -fx-text-fill: white !important;
+  -fx-border-color: #059669 !important;
+  -fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.3), 4, 0, 0, 2);
+}
+
+.retail-pro-keypad .keypad-enter-button:hover {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #059669 0%,
+    #047857 100%
+  ) !important;
+}
+
+/* ========================================
+   ENHANCED KEYPAD STYLES - Improved UX
+   ======================================== */
+
+/* Base Keypad Button - Revolutionary Touch-First Design */
+.numeric-keypad .keypad-button,
+.keypad-button {
+  -fx-background-color: linear-gradient(
+    to bottom,
+    #1e293b 0%,
+    #334155 100%
+  ) !important;
+  -fx-text-fill: white !important;
+  -fx-font-size: 30px !important;
+  -fx-font-weight: 800 !important;
+  -fx-font-family: "SF Pro Display", "Segoe UI", "Roboto", sans-serif;
+  -fx-background-radius: 16;
+  -fx-border-radius: 16;
+  -fx-border-color: rgba(255, 255, 255, 0.1);
+  -fx-border-width: 1.5;
+  -fx-min-width: 58px;
+  -fx-min-height: 58px;
+  -fx-pref-width: 70px;
+  -fx-pref-height: 70px;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 10, 0, 0, 4);
+  -fx-alignment: center;
+  -fx-content-display: center;
+  -fx-padding: 0 !important;
+}
+
+.keypad-button:hover {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #34495e 0%,
+    #3d5568 100%
+  );
+  -fx-text-fill: white;
+  -fx-border-color: #2c3e50;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 2);
+}
+
+.keypad-button:pressed {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #1a252f 0%,
+    #2c3e50 100%
+  );
+  -fx-text-fill: white;
+  -fx-border-color: #1a252f;
+  -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.4), 4, 0, 0, 2);
+}
+
+/* Number buttons - High-fidelity Slate */
+.numeric-keypad .keypad-number-button,
+.keypad-number-button {
+  -fx-background-color: linear-gradient(
+    to bottom,
+    #1e293b 0%,
+    #334155 100%
+  ) !important;
+}
+
+.numeric-keypad .keypad-number-button:hover,
+.keypad-number-button:hover {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #34495e 0%,
+    #3d5568 100%
+  ) !important;
+  -fx-text-fill: white !important;
+}
+
+/* Clear button - Vibrance Rose */
+.numeric-keypad .keypad-clear-button,
+.keypad-clear-button {
+  -fx-background-color: linear-gradient(
+    to bottom,
+    #f43f5e 0%,
+    #e11d48 100%
+  ) !important;
+  -fx-text-fill: white !important;
+  -fx-font-size: 26px !important;
+  -fx-font-weight: 800 !important;
+  -fx-border-color: #e11d48 !important;
+  -fx-effect: dropshadow(gaussian, rgba(244, 63, 94, 0.4), 8, 0, 0, 3);
+}
+
+.keypad-clear-button:hover {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #c0392b 0%,
+    #a93226 100%
+  );
+  -fx-text-fill: white !important;
+  -fx-border-color: #a93226;
+  -fx-effect: dropshadow(gaussian, rgba(231, 76, 60, 0.5), 6, 0, 0, 2);
+}
+
+.keypad-clear-button:pressed {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #a93226 0%,
+    #922b21 100%
+  );
+  -fx-text-fill: white !important;
+  -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.4), 4, 0, 0, 2);
+}
+
+/* Backspace button - Sunset Amber */
+.numeric-keypad .keypad-backspace-button,
+.keypad-backspace-button {
+  -fx-background-color: linear-gradient(
+    to bottom,
+    #f59e0b 0%,
+    #d97706 100%
+  ) !important;
+  -fx-text-fill: white !important;
+  -fx-font-size: 28px !important;
+  -fx-font-weight: 800 !important;
+  -fx-border-color: #d97706 !important;
+  -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.4), 8, 0, 0, 3);
+}
+
+.keypad-backspace-button:hover {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #e67e22 0%,
+    #d35400 100%
+  );
+  -fx-text-fill: white !important;
+  -fx-border-color: #d35400;
+  -fx-effect: dropshadow(gaussian, rgba(243, 156, 18, 0.5), 6, 0, 0, 2);
+}
+
+.keypad-backspace-button:pressed {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #d35400 0%,
+    #ba4a00 100%
+  );
+  -fx-text-fill: white !important;
+  -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.4), 4, 0, 0, 2);
+}
+
+/* Decimal button */
+.numeric-keypad .keypad-decimal-button,
+.keypad-decimal-button {
+  -fx-background-color: linear-gradient(
+    to bottom,
+    #34495e 0%,
+    #2c3e50 100%
+  ) !important;
+  -fx-text-fill: white !important;
+  -fx-font-size: 32px !important;
+  -fx-font-weight: 700 !important;
+  -fx-border-color: #1a252f !important;
+}
+
+/* Enter button - Lush Emerald */
+.numeric-keypad .keypad-enter-button,
+.keypad-enter-button {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #10b981 0%,
+    #059669 100%
+  ) !important;
+  -fx-text-fill: white !important;
+  -fx-font-size: 28px !important;
+  -fx-font-weight: 800 !important;
+  -fx-letter-spacing: 1px;
+  -fx-background-radius: 16;
+  -fx-border-radius: 16;
+  -fx-border-color: #059669 !important;
+  -fx-border-width: 1.5;
+  -fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.45), 10, 0, 0, 4);
+}
+
+.keypad-enter-button:hover {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #27ae60 0%,
+    #229954 100%
+  );
+  -fx-text-fill: white !important;
+  -fx-effect: dropshadow(gaussian, rgba(46, 204, 113, 0.6), 6, 0, 0, 2);
+}
+
+.keypad-enter-button:pressed {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #229954 0%,
+    #1e8449 100%
+  );
+  -fx-text-fill: white !important;
+  -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.4), 4, 0, 0, 2);
+}
+
+/* Wide button (for Clear spanning full width in decimal mode) */
+.keypad-wide-button {
+  -fx-min-width: 340px;
+  -fx-pref-width: 340px;
+}
+
+/* Keypad Container - Clean style */
+.numeric-keypad {
+    -fx-background-color: transparent;
+    -fx-padding: 2;
+}
+
+/* Keypad Grid - Premium Spacing */
+.keypad-grid {
+  -fx-alignment: center;
+  -fx-hgap: 6;
+  -fx-vgap: 6;
+}
+
+/* Reason Chips in Discount Screen */
+.reason-chip {
+    -fx-background-color: white;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+    -fx-padding: 8 16;
+    -fx-text-fill: #475569;
+    -fx-font-weight: 600;
+    -fx-cursor: hand;
+}
+
+.reason-chip:selected {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-border-color: #2563eb;
+    -fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.2), 6, 0, 0, 2);
+}
+
+/* PIN Indicator Container */
+.pin-indicator-container {
+  -fx-alignment: center;
+  -fx-padding: 10 0 20 0;
+}
+
+/* PIN Dot Base Style */
+.pin-dot {
+  -fx-min-width: 18px;
+  -fx-min-height: 18px;
+  -fx-pref-width: 18px;
+  -fx-pref-height: 18px;
+  -fx-background-radius: 9;
+  -fx-border-radius: 9;
+}
+
+/* Empty PIN dot */
+.pin-dot-empty {
+  -fx-background-color: transparent;
+  -fx-border-color: #bdc3c7;
+  -fx-border-width: 2;
+}
+
+/* Filled PIN dot */
+.pin-dot-filled {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #667eea 0%,
+    #764ba2 100%
+  );
+  -fx-border-color: #667eea;
+  -fx-border-width: 2;
+  -fx-effect: dropshadow(gaussian, rgba(102, 126, 234, 0.4), 4, 0, 0, 1);
+}
+
+/* Touch Password Field Container */
+.touch-password-field-container {
+  -fx-alignment: center;
+}
+
+/* Touch Password Input */
+.touch-password-input {
+  -fx-alignment: center;
+  -fx-font-size: 24px;
+  -fx-letter-spacing: 8px;
+}
+
+.login-btn-large {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #667eea 0%,
+    #764ba2 100%
+  );
+  -fx-text-fill: white;
+  -fx-font-size: 18px;
+  -fx-font-weight: 700;
+  -fx-background-radius: 16;
+  -fx-cursor: hand;
+  -fx-padding: 18 40;
+  -fx-letter-spacing: 0.8px;
+  -fx-effect: dropshadow(gaussian, rgba(102, 126, 234, 0.5), 15, 0, 0, 4);
+}
+
+.login-btn-large:hover {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #5568d3 0%,
+    #6a3f8f 100%
+  );
+  -fx-effect: dropshadow(gaussian, rgba(102, 126, 234, 0.6), 20, 0, 0, 5);
+  -fx-scale-x: 1.02;
+  -fx-scale-y: 1.02;
+}
+
+.login-btn-large:pressed {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #4a5bc4 0%,
+    #5d3580 100%
+  );
+  -fx-scale-x: 0.98;
+  -fx-scale-y: 0.98;
+  -fx-effect: dropshadow(gaussian, rgba(102, 126, 234, 0.4), 10, 0, 0, 3);
+}
+
+.login-btn-large:disabled {
+  -fx-background-color: #e0e0e0;
+  -fx-text-fill: #999;
+  -fx-opacity: 0.7;
+  -fx-effect: none;
+}
+
+.login-status-label {
+  -fx-font-size: 14px;
+  -fx-font-weight: 500;
+  -fx-padding: 8 0;
+}
+
+.login-status-info {
+  -fx-text-fill: #2196f3;
+}
+
+.login-status-error {
+  -fx-text-fill: #f44336;
+}
+
+.login-status-success {
+  -fx-text-fill: #4caf50;
+}
+
+/* --- Sales Screen Layout & Components --- */
+
+.sales-layout {
+  -fx-background-color: #f0f2f5;
+  -fx-padding: 10;
+}
+
+.left-panel,
+.center-panel,
+.right-panel {
+  -fx-background-color: white;
+  -fx-background-radius: 12;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 10, 0, 0, 0);
+}
+
+/* Left Panel - Cart */
+.cart-container {
+  -fx-background-color: white;
+  -fx-background-radius: 12;
+}
+
+.customer-info-box {
+  -fx-background-color: #e3f2fd;
+  -fx-padding: 12;
+  -fx-background-radius: 8;
+  -fx-border-color: #bbdefb;
+  -fx-border-width: 1;
+}
+
+.cart-table-view {
+  -fx-background-color: transparent;
+  -fx-border-width: 0;
+}
+
+.cart-table-view .column-header-background {
+  -fx-background-color: transparent;
+  -fx-border-width: 0 0 1 0;
+  -fx-border-color: #eee;
+}
+
+.cart-table-view .column-header {
+  -fx-background-color: transparent;
+  -fx-text-fill: #666;
+  -fx-font-weight: bold;
+  -fx-font-size: 12px;
+}
+
+.cart-table-view .table-cell {
+  -fx-font-size: 14px;
+  -fx-padding: 12 5;
+  -fx-alignment: center-left;
+}
+
+.total-display-area {
+  -fx-background-color: #f8f9fa;
+  -fx-padding: 20;
+  -fx-background-radius: 0 0 12 12;
+  -fx-border-color: #eee;
+  -fx-border-width: 1 0 0 0;
+}
+
+.total-label-main {
+  -fx-font-size: 32px;
+  -fx-font-weight: 800;
+  -fx-text-fill: #1e88e5;
+}
+
+.subtotal-label {
+  -fx-font-size: 14px;
+  -fx-text-fill: #666;
+}
+
+.tax-label {
+  -fx-font-size: 14px;
+  -fx-text-fill: #666;
+}
+
+/* Center Panel - Products */
+.category-scroll-container {
+  -fx-background-color: transparent;
+  -fx-padding: 5;
+}
+
+.category-button {
+  -fx-background-color: white;
+  -fx-text-fill: #333;
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+  -fx-padding: 15 10;
+  -fx-background-radius: 8;
+  -fx-border-color: #e0e0e0;
+  -fx-border-width: 1;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 2, 0, 0, 1);
+}
+
+.category-button:hover {
+  -fx-background-color: #f5f5f5;
+  -fx-border-color: #bdbdbd;
+}
+
+.category-button:pressed,
+.category-button.active {
+  -fx-background-color: #1e88e5;
+  -fx-text-fill: white;
+  -fx-border-color: #1565c0;
+}
+
+.product-grid-scroll {
+  -fx-background-color: transparent;
+  -fx-padding: 5;
+}
+
+.product-card-modern {
+  -fx-background-color: white;
+  -fx-background-radius: 10;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 4, 0, 0, 1);
+  -fx-cursor: hand;
+  -fx-padding: 10;
+  -fx-border-color: transparent;
+  -fx-border-width: 1;
+  -fx-alignment: center;
+}
+
+.product-card-modern:hover {
+  -fx-effect: dropshadow(gaussian, rgba(30, 136, 229, 0.2), 8, 0, 0, 2);
+  -fx-translate-y: -2;
+}
+
+.product-card-title {
+  -fx-font-size: 13px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #333;
+  -fx-text-alignment: center;
+  -fx-wrap-text: true;
+}
+
+.product-card-price {
+  -fx-font-size: 14px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1e88e5;
+}
+
+.product-card-stock-badge {
+  -fx-padding: 2 6;
+  -fx-background-radius: 4;
+  -fx-font-size: 10px;
+  -fx-font-weight: bold;
+  -fx-text-fill: white;
+}
+
+/* Right Panel - Functions */
+.function-panel-container {
+  -fx-padding: 15;
+  -fx-spacing: 15;
+}
+
+.function-section-title {
+  -fx-font-size: 12px;
+  -fx-text-fill: #888;
+  -fx-font-weight: bold;
+  -fx-padding: 0 0 5 0;
+}
+
+.function-grid {
+  -fx-hgap: 10;
+  -fx-vgap: 10;
+}
+
+.function-btn {
+  -fx-background-color: white;
+  -fx-text-fill: #444;
+  -fx-font-size: 12px;
+  -fx-font-weight: 600;
+  -fx-padding: 10;
+  -fx-background-radius: 8;
+  -fx-border-color: #e0e0e0;
+  -fx-border-width: 1;
+  -fx-cursor: hand;
+  -fx-alignment: center;
+  -fx-content-display: top;
+  -fx-graphic-text-gap: 5;
+}
+
+.function-btn:hover {
+  -fx-background-color: #f8f9fa;
+  -fx-border-color: #bdbdbd;
+}
+
+.function-btn:pressed {
+  -fx-background-color: #e0e0e0;
+}
+
+.function-btn.primary {
+  -fx-background-color: #e3f2fd;
+  -fx-text-fill: #1565c0;
+  -fx-border-color: #90caf9;
+}
+
+.function-btn.primary:hover {
+  -fx-background-color: #bbdefb;
+}
+
+.function-btn.danger {
+  -fx-background-color: #ffebee;
+  -fx-text-fill: #c62828;
+  -fx-border-color: #ffcdd2;
+}
+
+.function-btn.danger:hover {
+  -fx-background-color: #ffcdd2;
+}
+
+.pay-button-large {
+  -fx-background-color: #4caf50;
+  -fx-text-fill: white;
+  -fx-font-size: 24px;
+  -fx-font-weight: bold;
+  -fx-background-radius: 12;
+  -fx-effect: dropshadow(gaussian, rgba(76, 175, 80, 0.4), 8, 0, 0, 2);
+  -fx-cursor: hand;
+}
+
+.pay-button-large:hover {
+  -fx-background-color: #43a047;
+  -fx-effect: dropshadow(gaussian, rgba(76, 175, 80, 0.5), 10, 0, 0, 3);
+}
+
+.pay-button-large:pressed {
+  -fx-background-color: #388e3c;
+  -fx-translate-y: 1;
+}
+
+/* --- Sales Screen Styles --- */
+
+.sales-screen {
+  -fx-background-color: #f5f7fa;
+}
+
+.product-search-field {
+  -fx-font-size: 16px;
+  -fx-padding: 10px 15px;
+  -fx-background-radius: 25;
+  -fx-border-radius: 25;
+  -fx-border-color: #ddd;
+  -fx-border-width: 1;
+  -fx-background-color: white;
+}
+
+.search-button {
+  -fx-font-size: 18px;
+  -fx-background-color: #1e88e5;
+  -fx-text-fill: white;
+  -fx-background-radius: 25;
+  -fx-min-width: 50;
+  -fx-min-height: 50;
+  -fx-cursor: hand;
+}
+
+.department-toggle-button {
+  -fx-background-radius: 20;
+  -fx-background-color: white;
+  -fx-border-color: #ddd;
+  -fx-border-radius: 20;
+  -fx-cursor: hand;
+  -fx-text-fill: black;
+}
+
+.department-toggle-button:selected {
+  -fx-background-color: #1e88e5;
+  -fx-text-fill: white;
+  -fx-font-weight: bold;
+  -fx-border-color: transparent;
+}
+
+.product-card {
+  -fx-background-color: white;
+  -fx-background-radius: 10;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 3, 0, 0, 1);
+  -fx-cursor: hand;
+  -fx-padding: 0;
+  /* Remove padding to let content fill */
+}
+
+.product-card:hover {
+  -fx-background-color: #e3f2fd;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 5, 0, 0, 1);
+}
+
+.product-card-name {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+  -fx-text-alignment: center;
+}
+
+.product-card-price {
+  -fx-text-fill: #1e88e5;
+  -fx-font-weight: bold;
+  -fx-font-size: 12px;
+}
+
+.product-card-stock {
+  -fx-font-size: 10px;
+  -fx-text-fill: #666;
+}
+
+.product-card-stock.out-of-stock {
+  -fx-text-fill: red;
+}
+
+.transaction-panel {
+  -fx-background-color: white;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), -5, 0, 0, 0);
+}
+
+.cart-header {
+  -fx-background-color: #1e88e5;
+  -fx-padding: 15;
+}
+
+.cart-title {
+  -fx-text-fill: white;
+  -fx-font-size: 18px;
+  -fx-font-weight: bold;
+}
+
+.cart-action-button {
+  -fx-background-color: rgba(255, 255, 255, 0.2);
+  -fx-text-fill: white;
+  -fx-cursor: hand;
+  -fx-padding: 5 10;
+  -fx-background-radius: 4;
+}
+
+.cart-action-button:hover {
+  -fx-background-color: rgba(255, 255, 255, 0.3);
+}
+
+.totals-panel {
+  -fx-background-color: #f8f9fa;
+  -fx-border-color: #eee;
+  -fx-border-width: 1 0 0 0;
+  -fx-padding: 20;
+}
+
+.total-label-large {
+  -fx-font-size: 24px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1e88e5;
+}
+
+.payment-button {
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-text-fill: white;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+  -fx-pref-height: 60;
+}
+
+.payment-button-cash {
+  -fx-background-color: #4caf50;
+}
+
+.payment-button-card {
+  -fx-background-color: #2196f3;
+}
+
+.payment-button-split {
+  -fx-background-color: #ff9800;
+}
+
+.payment-button:hover {
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 5, 0, 0, 1);
+  -fx-opacity: 0.9;
+}
+
+.cart-qty-button {
+  -fx-background-color: #e0e0e0;
+  -fx-text-fill: #1a1a1a;
+  -fx-font-weight: bold;
+  -fx-font-size: 20px;
+  -fx-min-width: 35;
+  -fx-min-height: 35;
+  -fx-pref-width: 35;
+  -fx-pref-height: 35;
+  -fx-background-radius: 17.5;
+  -fx-cursor: hand;
+  -fx-padding: 0;
+  -fx-alignment: center;
+  -fx-content-display: center;
+}
+
+.cart-qty-button:hover {
+  -fx-background-color: #1e88e5;
+  -fx-text-fill: white;
+}
+
+.cart-qty-button:pressed {
+  -fx-background-color: #1e3c72;
+  -fx-text-fill: white;
+}
+
+/* --- Generic Components --- */
+
+.button {
+  -fx-background-color: #1e88e5;
+  -fx-text-fill: white;
+  -fx-padding: 12px 24px;
+  -fx-border-radius: 8px;
+  -fx-background-radius: 8px;
+  -fx-cursor: hand;
+  -fx-font-weight: bold;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 5, 0, 0, 2);
+}
+
+.button:hover {
+  -fx-background-color: #1e3c72;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 7, 0, 0, 3);
+}
+
+.button:pressed {
+  -fx-background-color: #153258;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 3, 0, 0, 1);
+}
+
+.button:disabled {
+  -fx-background-color: #cccccc;
+  -fx-text-fill: #666666;
+  -fx-opacity: 0.6;
+  -fx-cursor: default;
+}
+
+/* Text Field Styles */
+.text-field {
+  -fx-padding: 12px 15px;
+  -fx-border-radius: 8px;
+  -fx-background-radius: 8px;
+  -fx-border-color: #ddd;
+  -fx-border-width: 2;
+  -fx-background-color: #f8f9fa;
+  -fx-font-size: 16px;
+}
+
+.text-field:focused {
+  -fx-border-color: #1e88e5;
+  -fx-background-color: white;
+  -fx-effect: dropshadow(gaussian, rgba(30, 136, 229, 0.2), 5, 0, 0, 2);
+}
+
+.password-field {
+  -fx-padding: 18px 24px;
+  -fx-border-radius: 16px;
+  -fx-background-radius: 16px;
+  -fx-border-color: #e0e0e0;
+  -fx-border-width: 2;
+  -fx-background-color: #fafafa;
+  -fx-font-size: 18px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #1a1a1a;
+  -fx-letter-spacing: 2px;
+}
+
+.password-field:focused {
+  -fx-border-color: #667eea;
+  -fx-background-color: white;
+  -fx-effect: dropshadow(gaussian, rgba(102, 126, 234, 0.25), 12, 0, 0, 4);
+  -fx-border-width: 3;
+}
+
+/* Table View Styles */
+.table-view {
+  -fx-border-color: #e0e0e0;
+  -fx-border-radius: 8px;
+  -fx-background-radius: 8px;
+  -fx-background-color: white;
+}
+
+.table-view .column-header {
+  -fx-background-color: #1e88e5;
+  -fx-font-weight: bold;
+  -fx-text-fill: white;
+  -fx-padding: 10px;
+  -fx-font-size: 13px;
+}
+
+.table-view .column-header-background {
+  -fx-background-color: #1e88e5;
+}
+
+.table-view .table-cell {
+  -fx-padding: 10px;
+  -fx-border-color: transparent;
+  -fx-font-size: 14px;
+}
+
+.table-row-cell:selected {
+  -fx-background-color: #e3f2fd;
+  -fx-text-background-color: #1e88e5;
+}
+
+.table-row-cell:hover {
+  -fx-background-color: #f5f5f5;
+}
+
+.table-row-cell:odd {
+  -fx-background-color: #fafafa;
+}
+
+.table-row-cell:even {
+  -fx-background-color: white;
+}
+
+/* Label Styles */
+.label {
+  -fx-text-fill: #333;
+}
+
+.label.title {
+  -fx-font-size: 24px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1e88e5;
+}
+
+.label.subtitle {
+  -fx-font-size: 16px;
+  -fx-text-fill: #666;
+}
+
+/* Menu Bar Styles */
+.menu-bar {
+  -fx-background-color: #1e88e5;
+  -fx-padding: 8px 5px;
+  -fx-pref-height: 40px;
+}
+
+.menu-bar .menu {
+  -fx-text-fill: white;
+}
+
+.menu-bar .menu:hover {
+  -fx-background-color: #1e3c72;
+}
+
+.menu-bar .menu-item {
+  -fx-text-fill: #333;
+}
+
+.menu-bar .menu-item:hover {
+  -fx-background-color: #e3f2fd;
+}
+
+/* Radio Button Styles */
+.radio-button {
+  -fx-text-fill: #333;
+  -fx-font-size: 14px;
+}
+
+.radio-button .radio {
+  -fx-border-color: #1e88e5;
+  -fx-border-width: 2;
+  -fx-background-color: white;
+  -fx-border-radius: 10px;
+  -fx-background-radius: 10px;
+}
+
+.radio-button:selected .radio {
+  -fx-background-color: #1e88e5;
+  -fx-border-color: #1565c0;
+}
+
+.radio-button:selected .dot {
+  -fx-background-color: white;
+  -fx-background-radius: 5px;
+}
+
+/* Separator Styles */
+.separator {
+  -fx-background-color: #e0e0e0;
+}
+
+/* Scroll Bar Styles */
+.scroll-bar {
+  -fx-background-color: #f5f5f5;
+}
+
+.scroll-bar .thumb {
+  -fx-background-color: #bdbdbd;
+  -fx-background-radius: 5px;
+}
+
+.scroll-bar .thumb:hover {
+  -fx-background-color: #999;
+}
+
+.scroll-bar .track {
+  -fx-background-color: #f5f5f5;
+}
+
+/* Alert/Dialog Styles */
+.dialog-pane {
+  -fx-background-color: white;
+  -fx-border-color: #ddd;
+  -fx-border-width: 1;
+  -fx-border-radius: 10px;
+  -fx-background-radius: 10px;
+}
+
+.dialog-pane .header-panel {
+  -fx-background-color: #1e88e5;
+}
+
+.dialog-pane .header-panel .label {
+  -fx-text-fill: white;
+  -fx-font-weight: bold;
+  -fx-font-size: 16px;
+}
+
+/* Status Bar Styles */
+.status-bar {
+  -fx-background-color: #f0f0f0;
+  -fx-padding: 8px 15px;
+  -fx-border-color: #ddd;
+  -fx-border-width: 1 0 0 0;
+}
+
+/* Card/Panel Styles */
+.card {
+  -fx-background-color: white;
+  -fx-background-radius: 12px;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0, 0, 2);
+  -fx-padding: 20px;
+}
+
+/* Modern Table Style */
+.modern-table {
+  -fx-background-color: white;
+  -fx-border-color: #e0e0e0;
+  -fx-border-radius: 8px;
+  -fx-background-radius: 8px;
+}
+
+.modern-table .column-header-background {
+  -fx-background-color: #1e88e5;
+}
+
+.modern-table .column-header {
+  -fx-background-color: #1e88e5;
+  -fx-text-fill: white;
+  -fx-font-weight: bold;
+  -fx-padding: 12px;
+}
+
+/* Focus Styles */
+.focused {
+  -fx-border-color: #1e88e5;
+  -fx-border-width: 2;
+}
+
+/* Success/Error Colors */
+.success {
+  -fx-text-fill: #4caf50;
+}
+
+.error {
+  -fx-text-fill: #f44336;
+}
+
+.warning {
+  -fx-text-fill: #ff9800;
+}
+
+.info {
+  -fx-text-fill: #2196f3;
+}
+
+/* Shift Screen Specific Styles */
+.header-section {
+  -fx-background-color: white;
+  -fx-padding: 20;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 5, 0, 0, 1);
+}
+
+.status-badge {
+  -fx-padding: 5 15;
+  -fx-background-radius: 15;
+  -fx-font-weight: bold;
+  -fx-text-fill: white;
+  -fx-font-size: 14px;
+}
+
+.status-badge.active {
+  -fx-background-color: #4caf50;
+}
+
+.status-badge.inactive {
+  -fx-background-color: #9e9e9e;
+}
+
+.stat-card {
+  -fx-background-color: white;
+  -fx-padding: 15;
+  -fx-background-radius: 8;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 3, 0, 0, 1);
+  -fx-min-width: 150;
+  -fx-alignment: center-left;
+}
+
+.stat-label {
+  -fx-font-size: 12px;
+  -fx-text-fill: #666;
+  -fx-font-weight: bold;
+}
+
+.stat-value {
+  -fx-font-size: 22px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1e88e5;
+}
+
+.action-bar {
+  -fx-background-color: white;
+  -fx-padding: 15;
+  -fx-border-color: #eee;
+  -fx-border-width: 1 0 0 0;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 0, -2, 10, 0);
+}
+
+.shift-section-title {
+  -fx-font-size: 18px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #333;
+  -fx-padding: 0 0 10 0;
+}
+
+/* ========================================
+   TOUCH-ONLY MODE STYLES
+   Ensures all interactive elements meet
+   minimum 44x44px touch target requirements
+   ======================================== */
+
+/* Touch-optimized pagination buttons */
+.touch-pagination-btn {
+  -fx-min-height: 50px;
+  -fx-pref-height: 50px;
+  -fx-min-width: 120px;
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+}
+
+/* Touch-optimized search field */
+.touch-search-field {
+  -fx-min-height: 60px;
+  -fx-pref-height: 60px;
+  -fx-font-size: 18px;
+  -fx-padding: 15 20;
+  -fx-background-radius: 12;
+  -fx-border-radius: 12;
+}
+
+/* Touch-optimized list cells */
+.touch-list-cell {
+  -fx-min-height: 60px;
+  -fx-pref-height: 65px;
+  -fx-padding: 10 15;
+}
+
+/* Touch-optimized dialog buttons */
+.touch-dialog-btn {
+  -fx-min-height: 60px;
+  -fx-pref-height: 70px;
+  -fx-min-width: 150px;
+  -fx-font-size: 18px;
+  -fx-font-weight: bold;
+  -fx-background-radius: 12;
+  -fx-cursor: hand;
+}
+
+/* Touch-optimized back button */
+.touch-back-btn {
+  -fx-min-height: 50px;
+  -fx-pref-height: 50px;
+  -fx-min-width: 150px;
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+}
+
+/* Larger touch targets for cart table rows */
+.cart-table-view .table-row-cell {
+  -fx-min-height: 50px;
+  -fx-pref-height: 55px;
+}
+
+/* Touch-friendly scroll bars (wider for easier grabbing) */
+.touch-scroll-bar .thumb {
+  -fx-min-width: 20px;
+  -fx-pref-width: 20px;
+}
+
+.touch-scroll-bar:vertical .thumb {
+  -fx-min-height: 60px;
+}
+
+.touch-scroll-bar:horizontal .thumb {
+  -fx-min-width: 60px;
+}
+
+/* ========================================
+   CART INLINE EDIT BUTTONS
+   Touch-friendly buttons for qty/price editing
+   ======================================== */
+
+.cart-qty-edit-btn {
+  -fx-background-color: linear-gradient(to bottom, #e3f2fd 0%, #bbdefb 100%);
+  -fx-text-fill: #1565c0;
+  -fx-font-size: 15px;
+  -fx-font-weight: bold;
+  -fx-min-width: 50px;
+  -fx-min-height: 38px;
+  -fx-pref-height: 38px;
+  -fx-background-radius: 8;
+  -fx-border-radius: 8;
+  -fx-border-color: #90caf9;
+  -fx-border-width: 1;
+  -fx-cursor: hand;
+  -fx-padding: 5 10;
+}
+
+.cart-qty-edit-btn:hover {
+  -fx-background-color: linear-gradient(to bottom, #bbdefb 0%, #90caf9 100%);
+  -fx-border-color: #1e88e5;
+  -fx-effect: dropshadow(gaussian, rgba(30, 136, 229, 0.3), 5, 0, 0, 2);
+}
+
+.cart-qty-edit-btn:pressed {
+  -fx-background-color: #1e88e5;
+  -fx-text-fill: white;
+  -fx-border-color: #1565c0;
+}
+
+.cart-price-edit-btn {
+  -fx-background-color: linear-gradient(to bottom, #fff8e1 0%, #ffecb3 100%);
+  -fx-text-fill: #f57c00;
+  -fx-font-size: 13px;
+  -fx-font-weight: bold;
+  -fx-min-width: 65px;
+  -fx-min-height: 38px;
+  -fx-pref-height: 38px;
+  -fx-background-radius: 8;
+  -fx-border-radius: 8;
+  -fx-border-color: #ffe082;
+  -fx-border-width: 1;
+  -fx-cursor: hand;
+  -fx-padding: 5 8;
+}
+
+.cart-price-edit-btn:hover {
+  -fx-background-color: linear-gradient(to bottom, #ffecb3 0%, #ffd54f 100%);
+  -fx-border-color: #ff9800;
+  -fx-effect: dropshadow(gaussian, rgba(255, 152, 0, 0.3), 5, 0, 0, 2);
+}
+
+.cart-price-edit-btn:pressed {
+  -fx-background-color: #ff9800;
+  -fx-text-fill: white;
+  -fx-border-color: #f57c00;
+}
+
+/* ========================================
+   ITEM EDITOR DIALOG STYLES
+   ======================================== */
+
+.item-editor-dialog {
+  -fx-background-color: #f5f7fa;
+}
+
+.item-editor-apply-btn {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #4caf50 0%,
+    #43a047 100%
+  );
+  -fx-text-fill: white;
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-background-radius: 10;
+  -fx-effect: dropshadow(gaussian, rgba(76, 175, 80, 0.4), 8, 0, 0, 2);
+}
+
+.item-editor-apply-btn:hover {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    #43a047 0%,
+    #388e3c 100%
+  );
+  -fx-effect: dropshadow(gaussian, rgba(76, 175, 80, 0.5), 10, 0, 0, 3);
+}
+
+.item-editor-apply-btn:pressed {
+  -fx-background-color: #388e3c;
+}
+
+/* ========================================
+   PAYMENT SCREEN STYLES
+   Corona POS-style full-screen payment page
+   ======================================== */
+
+.payment-screen {
+  -fx-background-color: #f0f2f5;
+}
+
+/* Left Panel - Receipt Preview */
+.payment-receipt-panel {
+  -fx-background-color: white;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 15, 0, 3, 0);
+}
+
+.payment-receipt-panel .scroll-pane {
+  -fx-background-color: transparent;
+  -fx-background: transparent;
+}
+
+.payment-receipt-panel .scroll-pane > .viewport {
+  -fx-background-color: transparent;
+}
+
+/* Right Panel - Payment Options */
+.payment-options-panel {
+  -fx-background-color: #f0f2f5;
+}
+
+/* Amount Due Display */
+.payment-amount-due {
+  -fx-background-color: white;
+  -fx-background-radius: 16;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 8, 0, 0, 2);
+  -fx-padding: 20;
+}
+
+.payment-amount-due .amount-label {
+  -fx-font-size: 56px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1e88e5;
+}
+
+/* Payment Method Buttons */
+.payment-method-btn {
+  -fx-min-width: 180px;
+  -fx-min-height: 80px;
+  -fx-pref-width: 200px;
+  -fx-pref-height: 90px;
+  -fx-font-size: 18px;
+  -fx-font-weight: bold;
+  -fx-text-fill: white;
+  -fx-background-radius: 12;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 8, 0, 0, 2);
+}
+
+.payment-method-btn:hover {
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 3);
+}
+
+.payment-method-btn.cash {
+  -fx-background-color: #4caf50;
+}
+
+.payment-method-btn.cash:hover {
+  -fx-background-color: #43a047;
+}
+
+.payment-method-btn.card {
+  -fx-background-color: #2196f3;
+}
+
+.payment-method-btn.card:hover {
+  -fx-background-color: #1e88e5;
+}
+
+.payment-method-btn.ebt {
+  -fx-background-color: #ff9800;
+}
+
+.payment-method-btn.ebt:hover {
+  -fx-background-color: #f57c00;
+}
+
+.payment-method-btn.digital {
+  -fx-background-color: #9c27b0;
+}
+
+.payment-method-btn.digital:hover {
+  -fx-background-color: #8e24aa;
+}
+
+/* Cash Input Section */
+.payment-cash-section {
+  -fx-background-color: white;
+  -fx-background-radius: 16;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 8, 0, 0, 2);
+  -fx-padding: 20;
+}
+
+.payment-cash-section .amount-received-label {
+  -fx-font-size: 42px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #333;
+}
+
+.payment-cash-section .change-label {
+  -fx-font-size: 36px;
+  -fx-font-weight: bold;
+}
+
+.payment-cash-section .change-label.positive {
+  -fx-text-fill: #4caf50;
+}
+
+.payment-cash-section .change-label.negative {
+  -fx-text-fill: #f44336;
+}
+
+/* Quick Amount Buttons */
+.payment-quick-btn {
+  -fx-min-height: 50px;
+  -fx-pref-height: 50px;
+  -fx-font-size: 14px;
+  -fx-font-weight: bold;
+  -fx-text-fill: white;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+}
+
+.payment-quick-btn.exact {
+  -fx-background-color: #4caf50;
+}
+
+.payment-quick-btn.exact:hover {
+  -fx-background-color: #43a047;
+}
+
+.payment-quick-btn.next-dollar {
+  -fx-background-color: #2196f3;
+}
+
+.payment-quick-btn.next-dollar:hover {
+  -fx-background-color: #1e88e5;
+}
+
+.payment-quick-btn.denomination {
+  -fx-background-color: #607d8b;
+}
+
+.payment-quick-btn.denomination:hover {
+  -fx-background-color: #546e7a;
+}
+
+.payment-quick-btn.clear {
+  -fx-background-color: #f44336;
+}
+
+.payment-quick-btn.clear:hover {
+  -fx-background-color: #e53935;
+}
+
+/* Complete Payment Button */
+.payment-complete-btn {
+  -fx-background-color: #4caf50;
+  -fx-text-fill: white;
+  -fx-font-size: 22px;
+  -fx-font-weight: bold;
+  -fx-background-radius: 12;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(76, 175, 80, 0.4), 10, 0, 0, 3);
+}
+
+.payment-complete-btn:hover {
+  -fx-background-color: #43a047;
+  -fx-effect: dropshadow(gaussian, rgba(76, 175, 80, 0.5), 12, 0, 0, 4);
+}
+
+.payment-complete-btn:pressed {
+  -fx-background-color: #388e3c;
+}
+
+.payment-complete-btn:disabled {
+  -fx-background-color: #bdbdbd;
+  -fx-text-fill: #757575;
+  -fx-effect: none;
+  -fx-cursor: default;
+}
+
+/* Back Button */
+.payment-back-btn {
+  -fx-background-color: #757575;
+  -fx-text-fill: white;
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-background-radius: 0;
+  -fx-cursor: hand;
+}
+
+.payment-back-btn:hover {
+  -fx-background-color: #616161;
+}
+
+.payment-back-btn:pressed {
+  -fx-background-color: #424242;
+}
+
+/* Receipt Preview Styles */
+.payment-receipt-header {
+  -fx-alignment: center;
+  -fx-padding: 10 0 15 0;
+}
+
+.payment-receipt-store-name {
+  -fx-font-size: 22px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1a1a1a;
+}
+
+.payment-receipt-info {
+  -fx-font-size: 12px;
+  -fx-text-fill: #888;
+}
+
+.payment-receipt-items {
+  -fx-padding: 10 0;
+}
+
+.payment-receipt-item-row {
+  -fx-padding: 6 0;
+  -fx-border-color: transparent transparent #eee transparent;
+  -fx-border-width: 0 0 1 0;
+}
+
+.payment-receipt-totals {
+  -fx-padding: 15 0 10 0;
+  -fx-alignment: center-right;
+}
+
+.payment-receipt-grand-total {
+  -fx-font-size: 24px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1e88e5;
+}
+
+/* ========================================
+   RETAIL PRO - Modern Sales Screen Design
+   Unique, fresh UI distinct from competitors
+   
+   Design System:
+   - Primary: #059669 (Forest Green)
+   - Secondary: #0891B2 (Ocean Teal)
+   - Accent: #7C3AED (Royal Purple)
+   - Dark: #0f172a (Slate 900)
+   - Light: #f8fafc (Slate 50)
+   
+   Unique Elements:
+   - Transaction status indicator
+   - Pill-shaped badges
+   - Breadcrumb navigation
+   - Time-based greetings
+   - Floating summary cards
+   ======================================== */
+
+/* Main Layout - Clean modern aesthetic */
+.retail-pro-sales-layout {
+  -fx-background-color: #f1f5f9;
+}
+
+.retail-pro-main-layout {
+  -fx-background-color: #f1f5f9;
+}
+
+/* ========================================
+   LEFT PANEL - Transaction Sidebar (Dark)
+   ======================================== */
+
+.retail-pro-receipt-panel {
+  -fx-background-color: linear-gradient(to bottom, #1e293b 0%, #0f172a 100%);
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 15, 0, 4, 0);
+}
+
+.retail-pro-receipt-container {
+  -fx-background-color: transparent;
+}
+
+/* Status Bar - Unique element */
+.retail-pro-status-bar {
+  -fx-padding: 6 12;
+  -fx-background-color: rgba(34, 197, 94, 0.15);
+  -fx-background-radius: 20;
+}
+
+.retail-pro-status-label {
+  -fx-font-size: 11px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #22c55e;
+  -fx-letter-spacing: 0.5px;
+}
+
+/* Branding Pill - Unique element */
+.retail-pro-branding-pill {
+  -fx-background-color: rgba(255, 255, 255, 0.1);
+  -fx-background-radius: 25;
+  -fx-border-color: rgba(255, 255, 255, 0.15);
+  -fx-border-width: 1;
+  -fx-border-radius: 25;
+}
+
+.retail-pro-receipt-header {
+  -fx-background-color: transparent;
+}
+
+.retail-pro-store-name {
+  -fx-font-size: 15px;
+  -fx-font-weight: 700;
+  -fx-text-fill: white;
+  -fx-letter-spacing: 0.3px;
+}
+
+/* Transaction Badge - Unique element */
+.retail-pro-transaction-badge {
+  -fx-background-color: rgba(5, 150, 105, 0.2);
+  -fx-background-radius: 8;
+  -fx-padding: 6 10;
+}
+
+.retail-pro-tx-prefix {
+  -fx-font-size: 10px;
+  -fx-font-weight: 700;
+  -fx-text-fill: rgba(255, 255, 255, 0.5);
+  -fx-letter-spacing: 1px;
+}
+
+.retail-pro-receipt-number {
+  -fx-font-size: 14px;
+  -fx-font-weight: 700;
+  -fx-font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+  -fx-text-fill: #22c55e;
+}
+
+.retail-pro-receipt-detail {
+  -fx-font-size: 11px;
+  -fx-text-fill: rgba(255, 255, 255, 0.5);
+}
+
+.retail-pro-divider {
+  -fx-text-fill: rgba(255, 255, 255, 0.3);
+  -fx-font-size: 10px;
+}
+
+.retail-pro-customer-info {
+  -fx-background-color: rgba(5, 150, 105, 0.2);
+  -fx-padding: 10 12;
+  -fx-font-size: 12px;
+  -fx-text-fill: #22c55e;
+  -fx-font-weight: 600;
+  -fx-border-color: rgba(5, 150, 105, 0.3);
+  -fx-border-width: 1 0;
+}
+
+/* Cart Table - Dark theme */
+.retail-pro-cart-table {
+  -fx-background-color: transparent;
+  -fx-border-width: 0;
+}
+
+.retail-pro-cart-table .column-header-background {
+  -fx-background-color: rgba(255, 255, 255, 0.05);
+  -fx-border-color: rgba(255, 255, 255, 0.08);
+  -fx-border-width: 0 0 1 0;
+}
+
+.retail-pro-cart-table .column-header {
+  -fx-background-color: transparent;
+  -fx-font-size: 9px;
+  -fx-font-weight: 700;
+  -fx-text-fill: rgba(255, 255, 255, 0.35);
+  -fx-letter-spacing: 1px;
+}
+
+.retail-pro-cart-table .table-row-cell {
+  -fx-background-color: transparent;
+  -fx-border-color: rgba(255, 255, 255, 0.06);
+  -fx-border-width: 0 0 1 0;
+}
+
+.retail-pro-cart-table .table-row-cell:selected {
+  -fx-background-color: rgba(5, 150, 105, 0.2);
+}
+
+.retail-pro-cart-table .table-row-cell:hover {
+  -fx-background-color: rgba(255, 255, 255, 0.04);
+}
+
+.retail-pro-cart-item-name {
+  -fx-font-size: 12px;
+  -fx-font-weight: 600;
+  -fx-text-fill: white;
+}
+
+.retail-pro-cart-item-note {
+  -fx-font-size: 10px;
+  -fx-text-fill: rgba(255, 255, 255, 0.4);
+  -fx-font-style: italic;
+}
+
+.retail-pro-cart-item-price {
+  -fx-font-size: 12px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #22c55e;
+}
+
+/* Cart Quantity */
+.retail-pro-cart-qty-label {
+  -fx-font-size: 13px;
+  -fx-font-weight: 700;
+  -fx-text-fill: white;
+  -fx-background-color: rgba(255, 255, 255, 0.1);
+  -fx-padding: 3 7;
+  -fx-background-radius: 5;
+}
+
+.retail-pro-cart-remove-btn {
+  -fx-background-color: rgba(239, 68, 68, 0.8);
+  -fx-text-fill: white;
+  -fx-font-size: 11px;
+  -fx-font-weight: bold;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+  -fx-padding: 0;
+  -fx-min-width: 18px;
+  -fx-min-height: 18px;
+  -fx-max-width: 18px;
+  -fx-max-height: 18px;
+}
+
+.retail-pro-cart-remove-btn:hover {
+  -fx-background-color: #ef4444;
+}
+
+/* Multiplier Label */
+.retail-pro-multiplier-label {
+  -fx-background-color: #f59e0b;
+  -fx-padding: 8 12;
+  -fx-font-size: 12px;
+  -fx-font-weight: 700;
+  -fx-text-fill: #1e293b;
+  -fx-alignment: center;
+}
+
+/* Keypad Section */
+.retail-pro-keypad-section {
+  -fx-background-color: rgba(255, 255, 255, 0.03);
+  -fx-border-color: rgba(255, 255, 255, 0.08);
+  -fx-border-width: 1 0 0 0;
+}
+
+/* Input Display */
+.retail-pro-input-display {
+  -fx-background-color: rgba(5, 150, 105, 0.15);
+  -fx-font-size: 26px;
+  -fx-font-weight: 700;
+  -fx-text-fill: #22c55e;
+  -fx-padding: 12 16;
+  -fx-border-color: rgba(5, 150, 105, 0.3);
+  -fx-border-width: 1;
+  -fx-border-radius: 12;
+  -fx-background-radius: 12;
+  -fx-alignment: center;
+}
+
+/* ========================================
+   CENTER PANEL - Product Discovery Area
+   ======================================== */
+
+.retail-pro-center-panel {
+  -fx-background-color: #f8fafc;
+}
+
+.retail-pro-category-container {
+  -fx-background-color: #f8fafc;
+}
+
+/* Department View Header */
+.retail-pro-department-view {
+  -fx-background-color: #f8fafc;
+}
+
+.retail-pro-dept-header {
+  -fx-background-color: white;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 0 0 1 0;
+}
+
+.retail-pro-greeting {
+  -fx-font-size: 20px;
+  -fx-font-weight: 700;
+  -fx-text-fill: #1e293b;
+}
+
+.retail-pro-greeting-sub {
+  -fx-font-size: 13px;
+  -fx-text-fill: #64748b;
+}
+
+.retail-pro-global-search-btn {
+  -fx-background-color: linear-gradient(to right, #059669 0%, #0891b2 100%);
+  -fx-text-fill: white;
+  -fx-font-size: 13px;
+  -fx-font-weight: 600;
+  -fx-padding: 12 20;
+  -fx-background-radius: 25;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(5, 150, 105, 0.3), 8, 0, 0, 3);
+}
+
+.retail-pro-global-search-btn:hover {
+  -fx-effect: dropshadow(gaussian, rgba(5, 150, 105, 0.4), 12, 0, 0, 4);
+}
+
+.retail-pro-category-scroll {
+  -fx-background-color: transparent;
+  -fx-background: transparent;
+}
+
+.retail-pro-category-scroll > .viewport {
+  -fx-background-color: transparent;
+}
+
+.retail-pro-department-grid {
+  -fx-background-color: transparent;
+}
+
+/* Category Buttons - Unique tile design */
+.retail-pro-category-button {
+  -fx-background-radius: 16;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 8, 0, 0, 4);
+  -fx-border-width: 0;
+}
+
+.retail-pro-category-button:hover {
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 14, 0, 0, 6);
+  -fx-scale-x: 1.03;
+  -fx-scale-y: 1.03;
+}
+
+.retail-pro-category-button:pressed {
+  -fx-scale-x: 0.97;
+  -fx-scale-y: 0.97;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 4, 0, 0, 2);
+}
+
+/* Product View */
+.retail-pro-product-view {
+  -fx-background-color: #f8fafc;
+}
+
+.retail-pro-product-header {
+  -fx-background-color: white;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 0 0 1 0;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.03), 4, 0, 0, 2);
+}
+
+/* Breadcrumb Navigation - Unique element */
+.retail-pro-breadcrumb-home {
+  -fx-background-color: #f1f5f9;
+  -fx-text-fill: #64748b;
+  -fx-font-size: 16px;
+  -fx-padding: 8 12;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+  -fx-border-width: 0;
+}
+
+.retail-pro-breadcrumb-home:hover {
+  -fx-background-color: #e2e8f0;
+}
+
+.retail-pro-breadcrumb-arrow {
+  -fx-font-size: 18px;
+  -fx-text-fill: #94a3b8;
+  -fx-font-weight: 300;
+}
+
+.retail-pro-breadcrumb-current {
+  -fx-font-size: 16px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #1e293b;
+}
+
+.retail-pro-product-count {
+  -fx-font-size: 12px;
+  -fx-text-fill: #64748b;
+  -fx-padding: 0 12 0 0;
+}
+
+.retail-pro-inline-search-btn {
+  -fx-background-color: #f1f5f9;
+  -fx-text-fill: #64748b;
+  -fx-font-size: 16px;
+  -fx-padding: 10 14;
+  -fx-background-radius: 10;
+  -fx-cursor: hand;
+  -fx-border-width: 0;
+}
+
+.retail-pro-inline-search-btn:hover {
+  -fx-background-color: #e2e8f0;
+}
+
+.retail-pro-back-button {
+  -fx-background-color: #64748b;
+  -fx-text-fill: white;
+  -fx-font-size: 13px;
+  -fx-font-weight: 600;
+  -fx-padding: 10 16;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+}
+
+.retail-pro-back-button:hover {
+  -fx-background-color: #475569;
+}
+
+.retail-pro-quick-search-btn {
+  -fx-background-color: #6366f1;
+  -fx-text-fill: white;
+  -fx-font-size: 13px;
+  -fx-font-weight: 600;
+  -fx-padding: 10 16;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+}
+
+.retail-pro-quick-search-btn:hover {
+  -fx-background-color: #4f46e5;
+}
+
+.retail-pro-category-title {
+  -fx-font-size: 18px;
+  -fx-font-weight: 700;
+  -fx-text-fill: #1e293b;
+}
+
+.retail-pro-product-scroll {
+  -fx-background-color: transparent;
+  -fx-background: transparent;
+}
+
+.retail-pro-product-scroll > .viewport {
+  -fx-background-color: transparent;
+}
+
+.retail-pro-product-grid {
+  -fx-background-color: transparent;
+}
+
+/* Product Cards - Clean unique design */
+.retail-pro-product-card {
+  -fx-background-color: white;
+  -fx-background-radius: 14;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.06), 6, 0, 0, 3);
+  -fx-cursor: hand;
+  -fx-padding: 10;
+  -fx-border-color: transparent;
+  -fx-border-width: 0;
+  -fx-border-radius: 14;
+}
+
+.retail-pro-product-card:hover {
+  -fx-background-color: #fafafa;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 12, 0, 0, 5);
+  -fx-scale-x: 1.03;
+  -fx-scale-y: 1.03;
+}
+
+.retail-pro-product-card:pressed {
+  -fx-scale-x: 0.97;
+  -fx-scale-y: 0.97;
+  -fx-background-color: #f1f5f9;
+}
+
+.retail-pro-product-card:disabled {
+  -fx-opacity: 0.5;
+}
+
+.retail-pro-product-name {
+  -fx-font-size: 11px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #334155;
+  -fx-text-alignment: center;
+  -fx-wrap-text: true;
+}
+
+.retail-pro-product-price {
+  -fx-font-size: 12px;
+  -fx-font-weight: 700;
+  -fx-background-radius: 10;
+}
+
+.retail-pro-stock-badge-out {
+  -fx-background-color: #fef2f2;
+  -fx-text-fill: #dc2626;
+  -fx-padding: 2 8;
+  -fx-background-radius: 10;
+  -fx-font-size: 8px;
+  -fx-font-weight: 700;
+}
+
+.retail-pro-stock-badge-low {
+  -fx-background-color: #fffbeb;
+  -fx-text-fill: #d97706;
+  -fx-padding: 2 8;
+  -fx-background-radius: 10;
+  -fx-font-size: 8px;
+  -fx-font-weight: 700;
+}
+
+/* Pagination */
+.retail-pro-pagination {
+  -fx-background-color: white;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 1 0 0 0;
+}
+
+.retail-pro-page-btn {
+  -fx-background-color: #f1f5f9;
+  -fx-text-fill: #475569;
+  -fx-font-size: 12px;
+  -fx-font-weight: 600;
+  -fx-padding: 10 16;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+  -fx-border-width: 0;
+}
+
+.retail-pro-page-btn:hover {
+  -fx-background-color: #e2e8f0;
+}
+
+.retail-pro-page-btn:disabled {
+  -fx-opacity: 0.4;
+}
+
+.retail-pro-page-info {
+  -fx-font-size: 12px;
+  -fx-font-weight: 500;
+  -fx-text-fill: #64748b;
+}
+
+.retail-pro-loading {
+  -fx-progress-color: #059669;
+}
+
+/* Total Area - Unique floating card design */
+.retail-pro-total-area {
+  -fx-background-color: linear-gradient(to right, #059669 0%, #0891b2 100%);
+  -fx-padding: 0;
+}
+
+.retail-pro-summary-card {
+  -fx-background-color: transparent;
+}
+
+.retail-pro-item-count-badge {
+  -fx-background-color: rgba(255, 255, 255, 0.2);
+  -fx-text-fill: white;
+  -fx-font-size: 11px;
+  -fx-font-weight: 600;
+  -fx-padding: 4 12;
+  -fx-background-radius: 12;
+}
+
+.retail-pro-summary-label {
+  -fx-font-size: 9px;
+  -fx-font-weight: 700;
+  -fx-text-fill: rgba(255, 255, 255, 0.6);
+  -fx-letter-spacing: 1px;
+}
+
+.retail-pro-summary-value {
+  -fx-font-size: 15px;
+  -fx-font-weight: 700;
+  -fx-text-fill: white;
+}
+
+.retail-pro-total-prefix {
+  -fx-font-size: 10px;
+  -fx-font-weight: 700;
+  -fx-text-fill: rgba(255, 255, 255, 0.7);
+  -fx-letter-spacing: 2px;
+}
+
+.retail-pro-grand-total-box {
+  -fx-padding: 8 0 0 0;
+}
+
+.retail-pro-dollar-sign {
+  -fx-font-size: 28px;
+  -fx-text-fill: white;
+  -fx-font-weight: 700;
+  -fx-padding: 0 0 6 0;
+}
+
+.retail-pro-grand-total-amount {
+  -fx-font-size: 48px;
+  -fx-font-weight: 800;
+  -fx-text-fill: white;
+  -fx-alignment: center;
+}
+
+/* ========================================
+   RIGHT PANEL - Action Dock
+   ======================================== */
+
+.retail-pro-function-panel {
+  -fx-background-color: white;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 0 0 0 1;
+}
+
+.retail-pro-function-container {
+  -fx-background-color: white;
+}
+
+.retail-pro-function-header {
+  -fx-background-color: #f8fafc;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 0 0 1 0;
+}
+
+.retail-pro-function-title {
+  -fx-font-size: 11px;
+  -fx-font-weight: 700;
+  -fx-text-fill: #94a3b8;
+  -fx-letter-spacing: 1.5px;
+}
+
+.retail-pro-function-scroll {
+  -fx-background-color: transparent;
+  -fx-background: transparent;
+}
+
+.retail-pro-function-scroll > .viewport {
+  -fx-background-color: transparent;
+}
+
+/* Function Buttons - Unique pill style */
+.retail-pro-function-btn {
+  -fx-font-size: 12px;
+  -fx-font-weight: 600;
+  -fx-padding: 14 12;
+  -fx-background-radius: 12;
+  -fx-cursor: hand;
+  -fx-text-fill: white;
+  -fx-alignment: center;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 4, 0, 0, 2);
+}
+
+.retail-pro-function-btn:hover {
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 6, 0, 0, 3);
+  -fx-scale-x: 1.02;
+  -fx-scale-y: 1.02;
+}
+
+.retail-pro-function-btn:pressed {
+  -fx-scale-x: 0.98;
+  -fx-scale-y: 0.98;
+}
+
+/* Button variants - Unique gradient palette */
+.retail-pro-btn-amber {
+  -fx-background-color: linear-gradient(to bottom right, #f59e0b 0%, #d97706 100%);
+}
+
+.retail-pro-btn-teal {
+  -fx-background-color: linear-gradient(to bottom right, #0d9488 0%, #0891b2 100%);
+}
+
+.retail-pro-btn-indigo {
+  -fx-background-color: linear-gradient(to bottom right, #6366f1 0%, #7c3aed 100%);
+}
+
+.retail-pro-btn-orange {
+  -fx-background-color: linear-gradient(to bottom right, #f97316 0%, #ea580c 100%);
+}
+
+.retail-pro-btn-slate {
+  -fx-background-color: linear-gradient(to bottom right, #64748b 0%, #475569 100%);
+}
+
+.retail-pro-btn-rose {
+  -fx-background-color: linear-gradient(to bottom right, #f43f5e 0%, #e11d48 100%);
+}
+
+.retail-pro-btn-emerald {
+  -fx-background-color: linear-gradient(to bottom right, #059669 0%, #047857 100%);
+}
+
+.retail-pro-btn-violet {
+  -fx-background-color: linear-gradient(to bottom right, #8b5cf6 0%, #7c3aed 100%);
+}
+
+/* Function Footer */
+.retail-pro-function-footer {
+  -fx-background-color: #f8fafc;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 1 0 0 0;
+}
+
+/* CHECKOUT Button - Prominent unique design */
+.retail-pro-checkout-button {
+  -fx-background-color: linear-gradient(to bottom right, #059669 0%, #0891b2 100%);
+  -fx-text-fill: white;
+  -fx-font-size: 17px;
+  -fx-font-weight: 800;
+  -fx-background-radius: 14;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(5, 150, 105, 0.35), 12, 0, 0, 5);
+  -fx-letter-spacing: 0.5px;
+}
+
+.retail-pro-checkout-button:hover {
+  -fx-effect: dropshadow(gaussian, rgba(5, 150, 105, 0.45), 16, 0, 0, 7);
+  -fx-scale-x: 1.02;
+  -fx-scale-y: 1.02;
+}
+
+.retail-pro-checkout-button:pressed {
+  -fx-scale-x: 0.98;
+  -fx-scale-y: 0.98;
+}
+
+/* ========================================
+   Modern POS STYLE - Sales Screen
+   ======================================== */
+
+/* Main Layout */
+.pos-modern-sales-layout {
+  -fx-background-color: #e0e0e0;
+}
+
+/* ========================================
+   LEFT PANEL - Receipt
+   ======================================== */
+
+.pos-modern-receipt-panel {
+  -fx-background-color: #f5f5f5;
+  -fx-border-color: #ccc;
+  -fx-border-width: 0 1 0 0;
+}
+
+.pos-modern-receipt-container {
+  -fx-background-color: white;
+}
+
+.pos-modern-receipt-header {
+  -fx-background-color: white;
+  -fx-border-color: #e0e0e0;
+  -fx-border-width: 0 0 1 0;
+}
+
+.pos-modern-store-name {
+  -fx-font-size: 18px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #333;
+}
+
+.pos-modern-store-phone {
+  -fx-font-size: 13px;
+  -fx-text-fill: #666;
+}
+
+.pos-modern-receipt-separator {
+  -fx-padding: 10 0;
+}
+
+.pos-modern-receipt-number {
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-font-family: "Courier New", monospace;
+  -fx-text-fill: #333;
+  -fx-padding: 10 0;
+}
+
+.pos-modern-receipt-detail {
+  -fx-font-size: 12px;
+  -fx-text-fill: #666;
+}
+
+.pos-modern-customer-info {
+  -fx-background-color: #e3f2fd;
+  -fx-padding: 10;
+  -fx-font-size: 13px;
+  -fx-text-fill: #1565c0;
+  -fx-font-weight: 600;
+}
+
+/* Cart Table */
+.pos-modern-cart-table {
+  -fx-background-color: white;
+  -fx-border-width: 0;
+}
+
+.pos-modern-cart-table .column-header-background {
+  -fx-background-color: #f0f0f0;
+  -fx-border-color: #ddd;
+  -fx-border-width: 0 0 1 0;
+}
+
+.pos-modern-cart-table .column-header {
+  -fx-background-color: transparent;
+  -fx-font-size: 11px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #888;
+}
+
+.pos-modern-cart-table .table-row-cell {
+  -fx-background-color: white;
+  -fx-border-color: #eee;
+  -fx-border-width: 0 0 1 0;
+}
+
+.pos-modern-cart-table .table-row-cell:selected {
+  -fx-background-color: #c5e3f6;
+}
+
+.pos-modern-cart-item-name {
+  -fx-font-size: 14px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #333;
+}
+
+.pos-modern-cart-item-note {
+  -fx-font-size: 11px;
+  -fx-text-fill: #888;
+  -fx-font-style: italic;
+}
+
+.pos-modern-cart-item-price {
+  -fx-font-size: 14px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #333;
+}
+
+/* Cart Quantity Column */
+.pos-modern-cart-qty-label {
+  -fx-font-size: 14px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #333;
+}
+
+.pos-modern-cart-remove-btn {
+  -fx-background-color: #ff6b6b;
+  -fx-text-fill: white;
+  -fx-font-size: 14px;
+  -fx-font-weight: bold;
+  -fx-background-radius: 12;
+  -fx-cursor: hand;
+  -fx-padding: 0;
+}
+
+.pos-modern-cart-remove-btn:hover {
+  -fx-background-color: #ee5a5a;
+}
+
+.pos-modern-cart-remove-btn:pressed {
+  -fx-background-color: #d94444;
+}
+
+/* Multiplier Label */
+.pos-modern-multiplier-label {
+  -fx-background-color: #fff3e0;
+  -fx-padding: 8;
+  -fx-font-size: 14px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #e65100;
+}
+
+/* Keypad */
+.pos-modern-keypad {
+  -fx-background-color: transparent;
+  -fx-padding: 0;
+}
+
+/* Input Display */
+.pos-modern-input-display {
+  -fx-background-color: #ffffff;
+  -fx-font-size: 24px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #2c3e50;
+  -fx-padding: 10 15;
+  -fx-border-color: #dfe6e9;
+  -fx-border-width: 2;
+  -fx-border-radius: 8;
+  -fx-background-radius: 8;
+  -fx-alignment: center;
+  -fx-text-alignment: center;
+}
+
+/* Total Area */
+.pos-modern-total-area {
+  -fx-background-color: #1565c0;
+}
+
+.pos-modern-total-label {
+  -fx-font-size: 14px;
+  -fx-text-fill: rgba(255, 255, 255, 0.85);
+  -fx-font-weight: 500;
+}
+
+.pos-modern-total-value {
+  -fx-font-size: 15px;
+  -fx-font-weight: bold;
+  -fx-text-fill: white;
+}
+
+.pos-modern-total-separator {
+  -fx-background-color: rgba(255, 255, 255, 0.3);
+}
+
+.pos-modern-grand-total-row {
+  -fx-padding: 8 0 0 0;
+  -fx-alignment: center;
+}
+
+.pos-modern-item-count {
+  -fx-font-size: 13px;
+  -fx-text-fill: rgba(255, 255, 255, 0.8);
+  -fx-font-weight: 500;
+}
+
+.pos-modern-grand-total-amount {
+  -fx-font-size: 56px;
+  -fx-font-weight: 800;
+  -fx-text-fill: white;
+  -fx-alignment: center;
+}
+
+.pos-modern-dollar-sign {
+  -fx-font-size: 28px;
+  -fx-text-fill: white;
+  -fx-padding: 0 0 12 3;
+  -fx-font-weight: 700;
+}
+
+/* ========================================
+   CENTER PANEL - Categories & Products
+   ======================================== */
+
+.pos-modern-center-panel {
+  -fx-background-color: #f0f0f0;
+}
+
+.pos-modern-category-container {
+  -fx-background-color: #f0f0f0;
+}
+
+.pos-modern-category-scroll {
+  -fx-background-color: transparent;
+  -fx-background: transparent;
+}
+
+.pos-modern-department-grid {
+  -fx-background-color: transparent;
+}
+
+/* Category Buttons - Colorful Modern style */
+.pos-modern-category-button {
+  -fx-background-radius: 8;
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-text-fill: white;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2);
+  -fx-border-width: 0;
+}
+
+.pos-modern-category-button:hover {
+  -fx-opacity: 0.9;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 3);
+}
+
+.pos-modern-category-button:pressed {
+  -fx-opacity: 0.8;
+  -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+}
+
+/* Product View */
+.pos-modern-product-view {
+  -fx-background-color: #f0f0f0;
+}
+
+.pos-modern-product-header {
+  -fx-background-color: #e0e0e0;
+  -fx-border-color: #ccc;
+  -fx-border-width: 0 0 1 0;
+}
+
+.pos-modern-back-button {
+  -fx-background-color: #757575;
+  -fx-text-fill: white;
+  -fx-font-size: 24px;
+  -fx-font-weight: bold;
+  -fx-min-width: 60;
+  -fx-min-height: 50;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+}
+
+.pos-modern-back-button:hover {
+  -fx-background-color: #616161;
+}
+
+.pos-modern-menu-button {
+  -fx-background-color: #757575;
+  -fx-text-fill: white;
+  -fx-font-size: 28px;
+  -fx-min-width: 60;
+  -fx-min-height: 50;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+}
+
+.pos-modern-menu-button:hover {
+  -fx-background-color: #616161;
+}
+
+.pos-modern-category-title {
+  -fx-font-size: 20px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #333;
+}
+
+.pos-modern-product-scroll {
+  -fx-background-color: transparent;
+  -fx-background: transparent;
+}
+
+.pos-modern-product-grid {
+  -fx-background-color: transparent;
+}
+
+/* Product Cards */
+.pos-modern-product-card {
+  -fx-background-color: white;
+  -fx-background-radius: 8;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 4, 0, 0, 2);
+  -fx-cursor: hand;
+  -fx-padding: 10;
+  -fx-border-color: #e0e0e0;
+  -fx-border-width: 1;
+  -fx-border-radius: 8;
+}
+
+.pos-modern-product-card:hover {
+  -fx-background-color: #fafafa;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 6, 0, 0, 3);
+  -fx-border-color: #bdbdbd;
+}
+
+.pos-modern-product-card:pressed {
+  -fx-background-color: #f0f0f0;
+}
+
+.pos-modern-product-card:disabled {
+  -fx-opacity: 0.5;
+}
+
+.pos-modern-product-name {
+  -fx-font-size: 13px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #333;
+  -fx-text-alignment: center;
+  -fx-wrap-text: true;
+}
+
+.pos-modern-product-price {
+  -fx-font-size: 15px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1e88e5;
+}
+
+.pos-modern-stock-badge-out {
+  -fx-background-color: #e53935;
+  -fx-text-fill: white;
+  -fx-padding: 2 6;
+  -fx-background-radius: 4;
+  -fx-font-size: 10px;
+  -fx-font-weight: bold;
+}
+
+.pos-modern-stock-badge-low {
+  -fx-background-color: #ff9800;
+  -fx-text-fill: white;
+  -fx-padding: 2 6;
+  -fx-background-radius: 4;
+  -fx-font-size: 10px;
+  -fx-font-weight: bold;
+}
+
+/* Pagination */
+.pos-modern-pagination {
+  -fx-background-color: #e0e0e0;
+  -fx-border-color: #ccc;
+  -fx-border-width: 1 0 0 0;
+}
+
+.pos-modern-page-btn {
+  -fx-background-color: white;
+  -fx-text-fill: #333;
+  -fx-font-size: 14px;
+  -fx-font-weight: bold;
+  -fx-padding: 12 20;
+  -fx-background-radius: 6;
+  -fx-cursor: hand;
+}
+
+.pos-modern-page-btn:hover {
+  -fx-background-color: #f0f0f0;
+}
+
+.pos-modern-page-btn:disabled {
+  -fx-opacity: 0.4;
+}
+
+.pos-modern-page-info {
+  -fx-font-size: 14px;
+  -fx-text-fill: #666;
+}
+
+.pos-modern-loading {
+  -fx-progress-color: #1e88e5;
+}
+
+/* ========================================
+   RIGHT PANEL - Functions
+   ======================================== */
+
+.pos-modern-function-panel {
+  -fx-background-color: #f5f5f5;
+  -fx-border-color: #ccc;
+  -fx-border-width: 0 0 0 1;
+}
+
+.pos-modern-function-container {
+  -fx-background-color: #f5f5f5;
+}
+
+.pos-modern-function-title {
+  -fx-font-size: 14px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #333;
+}
+
+.pos-modern-page-indicator {
+  -fx-background-color: white;
+  -fx-text-fill: #333;
+  -fx-font-size: 12px;
+  -fx-font-weight: bold;
+  -fx-min-width: 30;
+  -fx-min-height: 30;
+  -fx-background-radius: 4;
+  -fx-border-color: #ddd;
+  -fx-border-width: 1;
+  -fx-border-radius: 4;
+}
+
+.pos-modern-page-indicator.active {
+  -fx-background-color: #1e88e5;
+  -fx-text-fill: white;
+  -fx-border-color: #1565c0;
+}
+
+/* Function Buttons */
+.pos-modern-function-btn {
+  -fx-font-size: 13px;
+  -fx-font-weight: 600;
+  -fx-padding: 12 10;
+  -fx-background-radius: 6;
+  -fx-cursor: hand;
+  -fx-text-fill: white;
+  -fx-alignment: center;
+}
+
+.pos-modern-function-btn:hover {
+  -fx-opacity: 0.9;
+}
+
+.pos-modern-function-btn:pressed {
+  -fx-opacity: 0.8;
+}
+
+/* Button color variants */
+.pos-modern-btn-green {
+  -fx-background-color: #4caf50;
+}
+
+.pos-modern-btn-green:hover {
+  -fx-background-color: #43a047;
+}
+
+.pos-modern-btn-red {
+  -fx-background-color: #f44336;
+}
+
+.pos-modern-btn-red:hover {
+  -fx-background-color: #e53935;
+}
+
+.pos-modern-btn-yellow {
+  -fx-background-color: #ffc107;
+  -fx-text-fill: #333;
+}
+
+.pos-modern-btn-yellow:hover {
+  -fx-background-color: #ffb300;
+}
+
+.pos-modern-btn-orange {
+  -fx-background-color: #ff9800;
+}
+
+.pos-modern-btn-orange:hover {
+  -fx-background-color: #fb8c00;
+}
+
+.pos-modern-btn-pink {
+  -fx-background-color: #e91e63;
+}
+
+.pos-modern-btn-pink:hover {
+  -fx-background-color: #d81b60;
+}
+
+.pos-modern-btn-purple {
+  -fx-background-color: #9c27b0;
+}
+
+.pos-modern-btn-purple:hover {
+  -fx-background-color: #8e24aa;
+}
+
+.pos-modern-btn-teal {
+  -fx-background-color: #009688;
+}
+
+.pos-modern-btn-teal:hover {
+  -fx-background-color: #00897b;
+}
+
+.pos-modern-btn-blue {
+  -fx-background-color: #2196f3;
+}
+
+.pos-modern-btn-blue:hover {
+  -fx-background-color: #1e88e5;
+}
+
+/* TOTAL Button - Large and prominent */
+.pos-modern-total-button {
+  -fx-background-color: #2196f3;
+  -fx-text-fill: white;
+  -fx-font-size: 28px;
+  -fx-font-weight: bold;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(33, 150, 243, 0.4), 8, 0, 0, 3);
+}
+
+.pos-modern-total-button:hover {
+  -fx-background-color: #1e88e5;
+  -fx-effect: dropshadow(gaussian, rgba(33, 150, 243, 0.5), 10, 0, 0, 4);
+}
+
+.pos-modern-total-button:pressed {
+  -fx-background-color: #1565c0;
+}
+
+/* Footer Scroll - Transparent and seamless */
+.pos-modern-footer-scroll {
+  -fx-background-color: transparent;
+  -fx-background: transparent;
+}
+
+.pos-modern-footer-scroll > .viewport {
+  -fx-background-color: transparent;
+}
+
+.pos-modern-footer-scroll .scroll-bar:vertical {
+  -fx-pref-width: 8px;
+}
+
+.pos-modern-footer-scroll .scroll-bar:vertical .track {
+  -fx-background-color: rgba(0, 0, 0, 0.05);
+  -fx-background-radius: 4px;
+}
+
+.pos-modern-footer-scroll .scroll-bar:vertical .thumb {
+  -fx-background-color: rgba(0, 0, 0, 0.2);
+  -fx-background-radius: 4px;
+}
+
+.pos-modern-footer-scroll .scroll-bar:vertical .thumb:hover {
+  -fx-background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   SEARCH DIALOG - Modern Style
+   ======================================== */
+
+.pos-modern-search-dialog {
+  -fx-background-color: white;
+}
+
+.pos-modern-search-container {
+  -fx-background-color: white;
+}
+
+.pos-modern-search-header {
+  -fx-background-color: #f5f5f5;
+  -fx-border-color: #e0e0e0;
+  -fx-border-width: 0 0 1 0;
+}
+
+.pos-modern-search-title {
+  -fx-font-size: 22px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #333;
+}
+
+.pos-modern-close-button {
+  -fx-background-color: #f44336;
+  -fx-text-fill: white;
+  -fx-font-size: 18px;
+  -fx-font-weight: bold;
+  -fx-min-width: 50;
+  -fx-min-height: 50;
+  -fx-background-radius: 25;
+  -fx-cursor: hand;
+}
+
+.pos-modern-close-button:hover {
+  -fx-background-color: #e53935;
+}
+
+.pos-modern-search-input-area {
+  -fx-background-color: #fafafa;
+  -fx-border-color: #e0e0e0;
+  -fx-border-width: 0 0 1 0;
+}
+
+.pos-modern-search-field {
+  -fx-font-size: 18px;
+  -fx-padding: 15;
+  -fx-background-radius: 8;
+  -fx-border-radius: 8;
+  -fx-border-color: #ddd;
+  -fx-border-width: 1;
+}
+
+.pos-modern-search-field:focused {
+  -fx-border-color: #1e88e5;
+  -fx-border-width: 2;
+}
+
+.pos-modern-search-button {
+  -fx-background-color: #1e88e5;
+  -fx-text-fill: white;
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+}
+
+.pos-modern-search-button:hover {
+  -fx-background-color: #1565c0;
+}
+
+.pos-modern-clear-button {
+  -fx-background-color: #757575;
+  -fx-text-fill: white;
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-background-radius: 8;
+  -fx-cursor: hand;
+}
+
+.pos-modern-clear-button:hover {
+  -fx-background-color: #616161;
+}
+
+.pos-modern-search-status {
+  -fx-font-size: 14px;
+  -fx-text-fill: #666;
+}
+
+.pos-modern-search-results-scroll {
+  -fx-background-color: transparent;
+  -fx-background: transparent;
+}
+
+.pos-modern-search-results-grid {
+  -fx-background-color: transparent;
+}
+
+.pos-modern-search-product-card {
+  -fx-background-color: white;
+  -fx-background-radius: 8;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 4, 0, 0, 2);
+  -fx-cursor: hand;
+  -fx-padding: 10;
+  -fx-border-color: #e0e0e0;
+  -fx-border-width: 1;
+  -fx-border-radius: 8;
+}
+
+.pos-modern-search-product-card:hover {
+  -fx-background-color: #e3f2fd;
+  -fx-border-color: #1e88e5;
+}
+
+.pos-modern-search-product-name {
+  -fx-font-size: 13px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #333;
+  -fx-text-alignment: center;
+}
+
+.pos-modern-search-product-price {
+  -fx-font-size: 15px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1e88e5;
+}
+
+.pos-modern-search-product-barcode {
+  -fx-font-size: 10px;
+  -fx-text-fill: #888;
+  -fx-font-family: monospace;
+}
+
+/* On-screen Keyboard */
+.pos-modern-keyboard-container {
+  -fx-background-color: #e0e0e0;
+  -fx-border-color: #ccc;
+  -fx-border-width: 1 0 0 0;
+}
+
+.pos-modern-keyboard-key {
+  -fx-background-color: white;
+  -fx-text-fill: #333;
+  -fx-font-size: 18px;
+  -fx-font-weight: bold;
+  -fx-min-width: 55;
+  -fx-min-height: 50;
+  -fx-background-radius: 6;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 2, 0, 0, 1);
+}
+
+.pos-modern-keyboard-key:hover {
+  -fx-background-color: #f0f0f0;
+}
+
+.pos-modern-keyboard-key:pressed {
+  -fx-background-color: #e0e0e0;
+}
+
+.pos-modern-keyboard-special {
+  -fx-background-color: #757575;
+  -fx-text-fill: white;
+}
+
+.pos-modern-keyboard-special:hover {
+  -fx-background-color: #616161;
+}
+
+/* ========================================
+   RETAIL PRO - Enhanced Unique Elements
+   Additional distinctive styling
+   ======================================== */
+
+/* Notification Toast - Unique slide-in design */
+.retail-pro-toast {
+  -fx-background-color: rgba(15, 23, 42, 0.95);
+  -fx-background-radius: 16;
+  -fx-padding: 16 24;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 20, 0, 0, 8);
+}
+
+.retail-pro-toast-success {
+  -fx-border-color: #22c55e;
+  -fx-border-width: 0 0 0 4;
+  -fx-border-radius: 16;
+}
+
+.retail-pro-toast-error {
+  -fx-border-color: #ef4444;
+  -fx-border-width: 0 0 0 4;
+  -fx-border-radius: 16;
+}
+
+.retail-pro-toast-warning {
+  -fx-border-color: #f59e0b;
+  -fx-border-width: 0 0 0 4;
+  -fx-border-radius: 16;
+}
+
+/* Empty Cart State - Unique illustration */
+.retail-pro-empty-cart {
+  -fx-background-color: transparent;
+}
+
+.retail-pro-empty-cart-icon {
+  -fx-font-size: 64px;
+  -fx-text-fill: rgba(255, 255, 255, 0.15);
+}
+
+.retail-pro-empty-cart-text {
+  -fx-font-size: 14px;
+  -fx-text-fill: rgba(255, 255, 255, 0.4);
+  -fx-font-weight: 500;
+}
+
+.retail-pro-empty-cart-hint {
+  -fx-font-size: 11px;
+  -fx-text-fill: rgba(255, 255, 255, 0.25);
+}
+
+/* Scan Animation Indicator */
+.retail-pro-scan-indicator {
+  -fx-background-color: rgba(34, 197, 94, 0.1);
+  -fx-background-radius: 50;
+  -fx-border-color: #22c55e;
+  -fx-border-width: 2;
+  -fx-border-radius: 50;
+}
+
+/* Quick Action Chips */
+.retail-pro-action-chip {
+  -fx-background-color: #f1f5f9;
+  -fx-text-fill: #475569;
+  -fx-font-size: 11px;
+  -fx-font-weight: 600;
+  -fx-padding: 6 12;
+  -fx-background-radius: 20;
+  -fx-cursor: hand;
+}
+
+.retail-pro-action-chip:hover {
+  -fx-background-color: #e2e8f0;
+}
+
+/* Modal Overlays - Unique frosted glass */
+.retail-pro-modal-overlay {
+  -fx-background-color: rgba(15, 23, 42, 0.6);
+}
+
+.retail-pro-modal-card {
+  -fx-background-color: white;
+  -fx-background-radius: 24;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 40, 0, 0, 15);
+  -fx-padding: 32;
+}
+
+.retail-pro-modal-header {
+  -fx-font-size: 22px;
+  -fx-font-weight: 700;
+  -fx-text-fill: #1e293b;
+}
+
+.retail-pro-modal-close-btn {
+  -fx-background-color: #f1f5f9;
+  -fx-text-fill: #64748b;
+  -fx-font-size: 18px;
+  -fx-background-radius: 50;
+  -fx-min-width: 40;
+  -fx-min-height: 40;
+  -fx-cursor: hand;
+}
+
+.retail-pro-modal-close-btn:hover {
+  -fx-background-color: #e2e8f0;
+}
+
+/* Payment Type Buttons - Large touch targets */
+.retail-pro-payment-btn {
+  -fx-background-color: white;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 2;
+  -fx-border-radius: 16;
+  -fx-background-radius: 16;
+  -fx-padding: 20;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 6, 0, 0, 3);
+}
+
+.retail-pro-payment-btn:hover {
+  -fx-border-color: #059669;
+  -fx-background-color: #f0fdf4;
+}
+
+.retail-pro-payment-btn-selected {
+  -fx-border-color: #059669;
+  -fx-border-width: 3;
+  -fx-background-color: #ecfdf5;
+}
+
+.retail-pro-payment-icon {
+  -fx-font-size: 32px;
+  -fx-text-fill: #059669;
+}
+
+.retail-pro-payment-label {
+  -fx-font-size: 14px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #1e293b;
+}
+
+/* Input Fields - Unique style */
+.retail-pro-input-field {
+  -fx-background-color: #f8fafc;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 2;
+  -fx-border-radius: 12;
+  -fx-background-radius: 12;
+  -fx-padding: 14 16;
+  -fx-font-size: 16px;
+}
+
+.retail-pro-input-field:focused {
+  -fx-border-color: #059669;
+  -fx-background-color: white;
+}
+
+/* Badge Styles - Pill shape */
+.retail-pro-badge {
+  -fx-padding: 4 12;
+  -fx-background-radius: 20;
+  -fx-font-size: 11px;
+  -fx-font-weight: 700;
+}
+
+.retail-pro-badge-success {
+  -fx-background-color: #dcfce7;
+  -fx-text-fill: #166534;
+}
+
+.retail-pro-badge-warning {
+  -fx-background-color: #fef3c7;
+  -fx-text-fill: #92400e;
+}
+
+.retail-pro-badge-error {
+  -fx-background-color: #fef2f2;
+  -fx-text-fill: #991b1b;
+}
+
+.retail-pro-badge-info {
+  -fx-background-color: #e0f2fe;
+  -fx-text-fill: #075985;
+}
+
+/* Stats Cards - Dashboard style */
+.retail-pro-stat-card {
+  -fx-background-color: white;
+  -fx-background-radius: 16;
+  -fx-padding: 20;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.06), 8, 0, 0, 4);
+}
+
+.retail-pro-stat-value {
+  -fx-font-size: 32px;
+  -fx-font-weight: 800;
+  -fx-text-fill: #1e293b;
+}
+
+.retail-pro-stat-label {
+  -fx-font-size: 12px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #64748b;
+  -fx-letter-spacing: 0.5px;
+}
+
+.retail-pro-stat-trend-up {
+  -fx-text-fill: #22c55e;
+  -fx-font-weight: 700;
+}
+
+.retail-pro-stat-trend-down {
+  -fx-text-fill: #ef4444;
+  -fx-font-weight: 700;
+}
+
+/* Accent Bar for Cards */
+.retail-pro-accent-bar {
+  -fx-background-radius: 2;
+  -fx-min-width: 4;
+  -fx-max-width: 4;
+}
+
+/* Category Icon Badge */
+.retail-pro-category-icon-badge {
+  -fx-background-color: rgba(255, 255, 255, 0.25);
+  -fx-background-radius: 12;
+  -fx-padding: 10;
+}
+
+.retail-pro-category-icon {
+  -fx-font-size: 28px;
+  -fx-text-fill: white;
+}
+
+.retail-pro-category-name {
+  -fx-font-size: 13px;
+  -fx-font-weight: 700;
+  -fx-text-fill: white;
+  -fx-text-alignment: center;
+}
+
+.retail-pro-category-count {
+  -fx-font-size: 10px;
+  -fx-text-fill: rgba(255, 255, 255, 0.7);
+}
+
+/* Scroll Bar Styling */
+.retail-pro-receipt-panel .scroll-bar:vertical {
+  -fx-background-color: transparent;
+  -fx-pref-width: 8;
+}
+
+.retail-pro-receipt-panel .scroll-bar:vertical .thumb {
+  -fx-background-color: rgba(255, 255, 255, 0.15);
+  -fx-background-radius: 4;
+}
+
+.retail-pro-receipt-panel .scroll-bar:vertical .thumb:hover {
+  -fx-background-color: rgba(255, 255, 255, 0.25);
+}
+
+.retail-pro-receipt-panel .scroll-bar:vertical .track {
+  -fx-background-color: transparent;
+}
+
+.retail-pro-receipt-panel .scroll-bar:vertical .increment-button,
+.retail-pro-receipt-panel .scroll-bar:vertical .decrement-button {
+  -fx-background-color: transparent;
+  -fx-padding: 0;
+}
+
+.retail-pro-receipt-panel .scroll-bar:vertical .increment-arrow,
+.retail-pro-receipt-panel .scroll-bar:vertical .decrement-arrow {
+  -fx-shape: "";
+  -fx-padding: 0;
+}
+
+/* Product Grid Scroll Styling */
+.retail-pro-product-scroll .scroll-bar:vertical {
+  -fx-background-color: transparent;
+  -fx-pref-width: 10;
+}
+
+.retail-pro-product-scroll .scroll-bar:vertical .thumb {
+  -fx-background-color: #cbd5e1;
+  -fx-background-radius: 5;
+}
+
+.retail-pro-product-scroll .scroll-bar:vertical .thumb:hover {
+  -fx-background-color: #94a3b8;
+}
+
+.retail-pro-product-scroll .scroll-bar:vertical .track {
+  -fx-background-color: #f1f5f9;
+  -fx-background-radius: 5;
+}
+
+/* Subtle Animation Hints */
+.retail-pro-pulse {
+  -fx-effect: dropshadow(gaussian, rgba(34, 197, 94, 0.4), 12, 0.5, 0, 0);
+}
+
+/* Focus Ring - Accessibility */
+.retail-pro-focus-ring:focused {
+  -fx-border-color: #059669;
+  -fx-border-width: 2;
+  -fx-effect: dropshadow(gaussian, rgba(5, 150, 105, 0.3), 8, 0, 0, 0);
+}
+
+/* =====================================================
+   TOUCH TERMINAL - Additional Touch Optimizations
+   ===================================================== */
+
+/* Touch-friendly scrollbars - wider for finger scrolling */
+.touch-smooth-scroll .scroll-bar:vertical {
+  -fx-background-color: transparent;
+  -fx-pref-width: 12;
+}
+
+.touch-smooth-scroll .scroll-bar:vertical .thumb {
+  -fx-background-color: rgba(0, 0, 0, 0.15);
+  -fx-background-radius: 6;
+}
+
+.touch-smooth-scroll .scroll-bar:vertical .thumb:hover {
+  -fx-background-color: rgba(0, 0, 0, 0.25);
+}
+
+.touch-smooth-scroll .scroll-bar:vertical .track {
+  -fx-background-color: transparent;
+}
+
+.touch-smooth-scroll .scroll-bar:vertical .increment-button,
+.touch-smooth-scroll .scroll-bar:vertical .decrement-button {
+  -fx-background-color: transparent;
+  -fx-padding: 0;
+}
+
+.touch-smooth-scroll .scroll-bar:vertical .increment-arrow,
+.touch-smooth-scroll .scroll-bar:vertical .decrement-arrow {
+  -fx-shape: "";
+  -fx-padding: 0;
+}
+
+/* Touch Cart Panel Scrollbars */
+.touch-cart-panel .scroll-bar:vertical {
+  -fx-background-color: transparent;
+  -fx-pref-width: 10;
+}
+
+.touch-cart-panel .scroll-bar:vertical .thumb {
+  -fx-background-color: rgba(255, 255, 255, 0.12);
+  -fx-background-radius: 5;
+}
+
+.touch-cart-panel .scroll-bar:vertical .thumb:hover {
+  -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+
+.touch-cart-panel .scroll-bar:vertical .track {
+  -fx-background-color: transparent;
+}
+
+/* Touch Cart Item Styling */
+.touch-cart-table .table-cell {
+  -fx-text-fill: white;
+  -fx-font-size: 14px;
+}
+
+/* Touch Product Name in Cart */
+.touch-cart-item-name {
+  -fx-font-size: 14px;
+  -fx-font-weight: 700;
+  -fx-text-fill: white;
+}
+
+.touch-cart-item-price {
+  -fx-font-size: 14px;
+  -fx-font-weight: 700;
+  -fx-text-fill: #22c55e;
+}
+
+.touch-cart-qty {
+  -fx-font-size: 16px;
+  -fx-font-weight: 800;
+  -fx-text-fill: white;
+  -fx-background-color: rgba(255, 255, 255, 0.1);
+  -fx-padding: 6 10;
+  -fx-background-radius: 8;
+}
+
+.touch-cart-remove {
+  -fx-background-color: rgba(239, 68, 68, 0.85);
+  -fx-text-fill: white;
+  -fx-font-size: 14px;
+  -fx-font-weight: 800;
+  -fx-background-radius: 10;
+  -fx-min-width: 28;
+  -fx-min-height: 28;
+  -fx-cursor: hand;
+}
+
+.touch-cart-remove:pressed {
+  -fx-background-color: #dc2626;
+  -fx-scale-x: 0.95;
+  -fx-scale-y: 0.95;
+}
+
+/* Touch-optimized tooltips - larger text */
+.tooltip {
+  -fx-font-size: 14px;
+  -fx-padding: 10 14;
+  -fx-background-radius: 10;
+}
+
+/* Ensure all buttons have touch feedback */
+.button:pressed {
+  -fx-opacity: 0.9;
+}
+
+/* High contrast focus indicators for accessibility */
+.button:focused {
+  -fx-border-color: #059669;
+  -fx-border-width: 3;
+  -fx-border-radius: 12;
+}
+
+/* =====================================================
+   QUICK ACTIONS STRIP - Live Dashboard Bar
+   ===================================================== */
+
+.touch-quick-strip {
+  -fx-background-color: linear-gradient(to right, #f8fafc, #f1f5f9);
+  -fx-padding: 10 20;
+  -fx-background-radius: 0;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 0 0 1 0;
+}
+
+.touch-clock-pill {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    rgba(8, 145, 178, 0.12) 0%,
+    rgba(5, 150, 105, 0.08) 100%
+  );
+  -fx-background-radius: 20;
+  -fx-padding: 6 14;
+  -fx-border-color: rgba(8, 145, 178, 0.25);
+  -fx-border-width: 1;
+  -fx-border-radius: 20;
+  -fx-effect: dropshadow(gaussian, rgba(8, 145, 178, 0.15), 6, 0, 0, 2);
+}
+
+.touch-pulse-dot {
+  -fx-background-color: radial-gradient(
+    center 50% 50%,
+    radius 50%,
+    #22c55e,
+    #16a34a
+  );
+  -fx-background-radius: 5;
+  -fx-effect: dropshadow(gaussian, rgba(34, 197, 94, 0.5), 6, 0.5, 0, 0);
+}
+
+.touch-clock-label {
+  -fx-font-size: 14px;
+  -fx-font-weight: 700;
+  -fx-text-fill: #334155;
+  -fx-font-family: "SF Mono", "Menlo", monospace;
+}
+
+.touch-quick-chip {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    rgba(99, 102, 241, 0.1) 0%,
+    rgba(139, 92, 246, 0.08) 100%
+  );
+  -fx-background-radius: 16;
+  -fx-padding: 8 16;
+  -fx-border-color: rgba(99, 102, 241, 0.25);
+  -fx-border-width: 1;
+  -fx-border-radius: 16;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(99, 102, 241, 0.12), 4, 0, 0, 2);
+  -fx-text-fill: #4338ca;
+  -fx-font-weight: 600;
+}
+
+.touch-quick-chip:hover {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    rgba(99, 102, 241, 0.18) 0%,
+    rgba(139, 92, 246, 0.14) 100%
+  );
+  -fx-border-color: rgba(99, 102, 241, 0.4);
+}
+
+.touch-quick-chip:pressed {
+  -fx-background-color: linear-gradient(
+    to bottom right,
+    rgba(99, 102, 241, 0.25) 0%,
+    rgba(139, 92, 246, 0.2) 100%
+  );
+  -fx-scale-x: 0.97;
+  -fx-scale-y: 0.97;
+}
+
+.touch-cart-mini-pill {
+  -fx-background-color: linear-gradient(to bottom, #0f172a, #1e293b);
+  -fx-background-radius: 20;
+  -fx-padding: 8 16;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 6, 0, 0, 2);
+}
+
+.touch-cart-count {
+  -fx-background-color: #22c55e;
+  -fx-background-radius: 10;
+  -fx-padding: 2 8;
+}
+
+/* Store Branding Header Component */
+.touch-store-branding {
+  -fx-background-color: rgba(255, 255, 255, 0.7);
+  -fx-background-radius: 20;
+  -fx-border-color: #e2e8f0;
+  -fx-border-width: 1;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 5, 0, 0, 1);
+}
+
+.touch-store-icon {
+  -fx-text-fill: #1e293b;
+}
+
+.touch-store-header-name {
+  -fx-font-size: 14px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1e293b;
+  -fx-letter-spacing: 0.5px;
+}
+
+.touch-store-count {
+  -fx-background-color: #22c55e;
+  -fx-text-fill: white;
+  -fx-font-size: 13px;
+  -fx-font-weight: 800;
+  -fx-background-radius: 12;
+  -fx-padding: 2 10;
+  -fx-effect: dropshadow(gaussian, rgba(34, 197, 94, 0.3), 5, 0, 0, 2);
+}
+
+/* =====================================================
+   SMART SUGGESTIONS BAR - "You may also need..."
+   ===================================================== */
+
+.touch-suggestion-bar {
+  -fx-background-color: linear-gradient(to right, #fefce8, #fef9c3);
+  -fx-padding: 10 20;
+  -fx-border-color: #fde047;
+  -fx-border-width: 1 0;
+}
+
+.touch-suggestion-label {
+  -fx-font-size: 12px;
+  -fx-font-weight: 600;
+  -fx-text-fill: #a16207;
+}
+
+.touch-suggestion-item {
+  -fx-background-color: white;
+  -fx-background-radius: 10;
+  -fx-padding: 4 12;
+  -fx-border-color: #fcd34d;
+  -fx-border-width: 1;
+  -fx-border-radius: 10;
+  -fx-cursor: hand;
+}
+
+.touch-suggestion-item:hover {
+  -fx-background-color: #fef3c7;
+}
+
+/* =====================================================
+   ITEM ADDED TOAST - Success Feedback
+   ===================================================== */
+
+.touch-toast-success {
+  -fx-background-color: linear-gradient(to right, #059669, #10b981);
+  -fx-background-radius: 24;
+  -fx-padding: 14 28;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 12, 0, 0, 4);
+}
+
+.touch-toast-text {
+  -fx-font-size: 16px;
+  -fx-font-weight: 700;
+  -fx-text-fill: white;
+}
+
+/* =====================================================
+   ENHANCED CATEGORY MEGA TILES - With Badge Counts
+   ===================================================== */
+
+.touch-category-badge {
+  -fx-background-color: linear-gradient(to bottom, #0891b2, #0e7490);
+  -fx-background-radius: 12;
+  -fx-padding: 2 8;
+  -fx-font-size: 11px;
+  -fx-font-weight: 700;
+  -fx-text-fill: white;
+}
+
+.touch-mega-category-tile .touch-category-badge {
+  -fx-translate-x: 60;
+  -fx-translate-y: -50;
+}
+
+/* =====================================================
+   PRODUCT QUANTITY OVERLAY - Items already in cart
+   ===================================================== */
+
+.touch-qty-badge {
+  -fx-background-color: linear-gradient(to bottom, #7c3aed, #6d28d9);
+  -fx-background-radius: 16;
+  -fx-min-width: 32;
+  -fx-min-height: 32;
+  -fx-font-size: 14px;
+  -fx-font-weight: 800;
+  -fx-text-fill: white;
+  -fx-effect: dropshadow(gaussian, rgba(124, 58, 237, 0.4), 6, 0, 0, 2);
+}
+
+/* =====================================================
+   ANIMATED SCAN LINE - Visual Feedback
+   ===================================================== */
+
+.touch-scan-line {
+  -fx-background-color: linear-gradient(
+    to right,
+    transparent,
+    #22c55e,
+    transparent
+  );
+  -fx-pref-height: 3;
+  -fx-opacity: 0.8;
+}
+
+/* =====================================================
+   CART EMPTY STATE - Friendly Placeholder
+   ===================================================== */
+
+.touch-empty-cart {
+  -fx-alignment: center;
+  -fx-padding: 40 20;
+}
+
+.touch-empty-cart-icon {
+  -fx-font-size: 48px;
+  -fx-opacity: 0.5;
+}
+
+.touch-empty-cart-text {
+  -fx-font-size: 16px;
+  -fx-font-weight: 600;
+  -fx-text-fill: rgba(255, 255, 255, 0.6);
+}
+
+.touch-empty-cart-hint {
+  -fx-font-size: 13px;
+  -fx-text-fill: rgba(255, 255, 255, 0.4);
+}
+
+/* =====================================================
+   SPLIT TENDER VISUALIZATION - Payment Progress
+   ===================================================== */
+
+.touch-tender-progress {
+  -fx-background-color: rgba(255, 255, 255, 0.1);
+  -fx-background-radius: 8;
+  -fx-pref-height: 12;
+}
+
+.touch-tender-fill {
+  -fx-background-color: linear-gradient(to right, #22c55e, #16a34a);
+  -fx-background-radius: 8;
+}
+
+/* =====================================================
+   KEYPAD GLOW EFFECT - Active Input Indicator  
+   ===================================================== */
+
+.touch-keypad-active {
+  -fx-effect: dropshadow(gaussian, rgba(5, 150, 105, 0.3), 15, 0, 0, 0);
+}
+
+.touch-keypad-btn:active {
+  -fx-background-color: linear-gradient(to bottom, #059669, #047857);
+  -fx-text-fill: white;
+}

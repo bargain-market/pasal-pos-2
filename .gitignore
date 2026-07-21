@@ -1,0 +1,54 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Application data
+data/
+*.log
+*.db
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# ...but the PAX POSLink 2 SDK jars are NOT on Maven Central and must be tracked so
+# CI can build/bundle PAX support. Keep them in the repo.
+!lib/pax/
+!lib/pax/*.jar
+
+.cursor/
+.cursor/debug.log
+.dist
+dist/
+dist
+
+.m2
+m2/
+.m2
+
+META-INF

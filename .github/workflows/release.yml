@@ -1,0 +1,197 @@
+name: Release Pasal POS 2
+
+# Builds a standalone Windows installer for "Pasal POS 2" — the side-by-side PAX
+# test build. It installs separately from the production POS (own name + own data dir)
+# and publishes to THIS repo's Releases using the default GITHUB_TOKEN (no PAT / no
+# separate releases repo required).
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write   # needed for gh release create/upload against this repo
+
+jobs:
+  build-and-release:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    name: Build Windows installer
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+          architecture: x64
+
+      - name: Calculate and set version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+             APP_VERSION="${{ github.ref_name }}"
+             CLEAN_VERSION=${APP_VERSION#v}
+          else
+             POM_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+             # jpackage requires strictly Major.Minor.Patch — take Major.Minor from POM
+             # and use the run number as the patch component.
+             BASE_VERSION=$(echo "$POM_VERSION" | cut -d. -f1-2)
+             CLEAN_VERSION="${BASE_VERSION}.${{ github.run_number }}"
+             APP_VERSION="v${CLEAN_VERSION}"
+          fi
+
+          echo "Determined version: $CLEAN_VERSION"
+
+          # Sync application.properties app.version
+          PROP_FILE="src/main/resources/application.properties"
+          if [ -f "$PROP_FILE" ]; then
+            sed -i.bak "s/^app\.version=.*/app.version=$CLEAN_VERSION/" "$PROP_FILE"
+            rm -f "${PROP_FILE}.bak"
+          fi
+
+          # On tag builds, pin the pom version to the tag exactly.
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+             mvn versions:set -DnewVersion="$CLEAN_VERSION" -DgenerateBackupPoms=false
+          fi
+
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+          echo "CLEAN_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
+
+      - name: Build with Maven
+        run: mvn package -DskipTests
+
+      - name: Package with jpackage
+        shell: bash
+        run: |
+          APP_VERSION="${{ env.APP_VERSION }}"
+          CLEAN_VERSION="${{ env.CLEAN_VERSION }}"
+
+          JAVAFX_VERSION="21"
+          CLASSIFIER="win"
+          INSTALLER_TYPE="exe"
+
+          echo "Building Pasal POS 2 $CLEAN_VERSION for $CLASSIFIER ($INSTALLER_TYPE)..."
+
+          TEMP_DIR="temp-jpackage"
+          mkdir -p "$TEMP_DIR/lib"
+
+          # The shaded (fat) jar replaces the main artifact; exclude the pre-shade original.
+          MAIN_JAR=$(find target -name "pasal-pos-2-*.jar" \
+                        -not -name "original-*.jar" \
+                        -not -name "*-sources.jar" \
+                        -not -name "*-javadoc.jar" | head -n 1)
+
+          if [ -z "$MAIN_JAR" ]; then
+             echo "ERROR: Could not find built jar!"
+             ls -R target || true
+             exit 1
+          fi
+
+          echo "Using JAR: $MAIN_JAR"
+          cp "$MAIN_JAR" "$TEMP_DIR/pasal-pos-2.jar"
+
+          # Ship the PAX SDK jars alongside the app jar — PosLink2TerminalClient loads
+          # lib/pax/ relative to the working directory at runtime, so place them where the
+          # installed app runs. jpackage copies everything under --input into the app image.
+          if [ -d "lib/pax" ]; then
+             mkdir -p "$TEMP_DIR/lib/pax"
+             cp lib/pax/*.jar "$TEMP_DIR/lib/pax/" || true
+          fi
+
+          MAVEN_REPO="$HOME/.m2/repository"
+          JAVAFX_BASE="$MAVEN_REPO/org/openjfx"
+
+          echo "Copying JavaFX modules..."
+          for module in javafx-base javafx-controls javafx-fxml javafx-graphics; do
+             JAR_PATH=$(find "$JAVAFX_BASE/$module/$JAVAFX_VERSION" -name "${module}-${JAVAFX_VERSION}-${CLASSIFIER}*.jar" | grep -v "sources" | grep -v "javadoc" | head -n 1)
+             if [ -f "$JAR_PATH" ]; then
+                 cp "$JAR_PATH" "$TEMP_DIR/lib/${module}.jar"
+                 echo "  Copied $module"
+             else
+                 echo "  ERROR: Could not find $module for $CLASSIFIER"
+                 ls -R "$JAVAFX_BASE/$module" || true
+                 exit 1
+             fi
+          done
+
+          DIST_DIR="dist"
+          mkdir -p "$DIST_DIR"
+
+          MODULES="javafx.controls,javafx.fxml,java.sql,java.naming,java.management,java.instrument,java.scripting,jdk.unsupported,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.crypto.mscapi"
+
+          JPACKAGE_ARGS=(
+            --input "$TEMP_DIR"
+            --name "Pasal-POS-2"
+            --main-jar "pasal-pos-2.jar"
+            --main-class "com.pos.PosApplication"
+            --type "$INSTALLER_TYPE"
+            --dest "$DIST_DIR"
+            --app-version "$CLEAN_VERSION"
+            --vendor "Pasal"
+            --description "Pasal POS 2 (PAX certification / test build)"
+            --copyright "Copyright 2026"
+            --module-path "${TEMP_DIR}/lib"
+            --add-modules "$MODULES"
+            --win-menu
+            --win-shortcut
+          )
+
+          jpackage "${JPACKAGE_ARGS[@]}"
+
+          cd "$DIST_DIR"
+          ARTIFACT=$(ls *.exe | head -n 1)
+          NEW_NAME="pasal-pos-2-${APP_VERSION}-windows-x64.exe"
+          mv "$ARTIFACT" "$NEW_NAME"
+          echo "Created artifact: $NEW_NAME"
+          echo "ARTIFACT_PATH=$DIST_DIR/$NEW_NAME" >> $GITHUB_ENV
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "${{ github.ref }}" == "refs/tags/v"* ]]; then
+            TAG_NAME="${{ github.ref_name }}"
+            TITLE="${{ github.ref_name }}"
+          else
+            TAG_NAME="v${{ env.CLEAN_VERSION }}"
+            TITLE="Pasal POS 2 ${{ env.CLEAN_VERSION }}"
+          fi
+
+          echo "Releasing $TAG_NAME to ${{ github.repository }}..."
+
+          if gh release view "$TAG_NAME" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+             gh release upload "$TAG_NAME" "${{ env.ARTIFACT_PATH }}" --repo "${{ github.repository }}" --clobber
+          else
+             gh release create "$TAG_NAME" \
+               "${{ env.ARTIFACT_PATH }}" \
+               --repo "${{ github.repository }}" \
+               --title "$TITLE" \
+               --notes "Pasal POS 2 side-by-side PAX test build ($TAG_NAME). Installs separately from the production POS." \
+               --latest
+          fi
+
+      - name: Upload installer as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pasal-pos-2-windows-installer
+          path: ${{ env.ARTIFACT_PATH }}
+          if-no-files-found: error

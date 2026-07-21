@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Flush async queues and close rolling files cleanly on app exit,
+         so buffered log lines aren't lost when the POS is closed. -->
+    <shutdownHook class="ch.qos.logback.core.hook.DefaultShutdownHook"/>
+
+    <!-- ===================== Appenders ===================== -->
+
+    <!-- Console Appender (dev visibility; cheap, stays synchronous) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Main app rolling file - ~/Documents/Pasal POS 2/logs -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- Size + time based: rolls daily AND whenever the active file hits maxFileSize,
+             so a single busy day can never produce one giant file. -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${user.home}/Documents/Pasal POS 2/logs/pasal-pos.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- Cap each individual file so it never grows unbounded within a day -->
+            <maxFileSize>10MB</maxFileSize>
+            <!-- Keep only the last 3 days of logs -->
+            <maxHistory>3</maxHistory>
+            <!-- Delete old log history when the app starts, not only on rollover -->
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            <!-- Hard ceiling across all retained log files -->
+            <totalSizeCap>50MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Sync-only rolling file - ~/Documents/Pasal POS 2/sync logs (kept out of main app log) -->
+    <appender name="SYNC_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${user.home}/Documents/Pasal POS 2/sync logs/sync.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- Cap each sync file at 10MB so chatty sync traffic can't create a 100MB+ file -->
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>3</maxHistory>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            <!-- Hard ceiling: sync logs can never exceed 50MB on disk total -->
+            <totalSizeCap>50MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Async wrappers: file I/O (incl. rollover) never blocks sale/transaction/UI threads.
+         neverBlock=true  -> if the queue is full, drop rather than stall the caller.
+         discardingThreshold=0 -> never silently drop WARN/ERROR (only lower levels may be dropped). -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+        <queueSize>4096</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <appender name="ASYNC_SYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="SYNC_FILE"/>
+        <queueSize>4096</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <!-- ===================== Application loggers ===================== -->
+
+    <!-- INFO in production: DEBUG here produced ~800k lines/day (incl. per-cycle DB connect
+         logging) that starved the UI thread on low-end POS hardware. Set to DEBUG only when
+         actively diagnosing. -->
+    <logger name="com.pos" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_FILE"/>
+    </logger>
+
+    <!-- Hardware/Printing - always DEBUG for troubleshooting -->
+    <logger name="com.pos.hardware" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_FILE"/>
+    </logger>
+
+    <logger name="com.pos.util.BarcodeGenerator" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_FILE"/>
+    </logger>
+
+    <logger name="com.pos.service.ReceiptPDFService" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_FILE"/>
+    </logger>
+
+    <!-- ===================== Sync loggers (dedicated sync file) ===================== -->
+
+    <!-- INFO in production: the sync scheduler runs every few seconds; at DEBUG it was the
+         single largest log source (~1M lines/day). INFO keeps connect/disconnect + cycle
+         summaries. Set to DEBUG temporarily when diagnosing sync issues. -->
+    <logger name="com.pos.sync" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_SYNC_FILE"/>
+    </logger>
+
+    <!-- API client: INFO keeps request/result summaries but drops verbose per-request
+         body dumps that bloated the sync log. Set to DEBUG temporarily when diagnosing API issues. -->
+    <logger name="com.pos.api" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_SYNC_FILE"/>
+    </logger>
+
+    <!-- Socket.IO library: at DEBUG it logs every ping/pong/heartbeat/frame and was the main
+         cause of 100MB+ sync logs. WARN keeps errors/disconnects; our own WebSocketClient
+         (com.pos.sync) still logs connect/disconnect events at DEBUG. -->
+    <logger name="io.socket" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_SYNC_FILE"/>
+    </logger>
+
+    <!-- Sync services: INFO in production (high-volume per-cycle logging). DEBUG when diagnosing. -->
+    <logger name="com.pos.service.OfflineSyncService" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_SYNC_FILE"/>
+    </logger>
+
+    <logger name="com.pos.service.UserSyncService" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_SYNC_FILE"/>
+    </logger>
+
+    <logger name="com.pos.service.ProductSyncService" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_SYNC_FILE"/>
+    </logger>
+
+    <logger name="com.pos.service.SyncPendingReportService" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_SYNC_FILE"/>
+    </logger>
+
+    <!-- ===================== Framework loggers - reduce noise ===================== -->
+    <logger name="org.springframework" level="ERROR"/>
+    <logger name="org.hibernate" level="ERROR"/>
+    <logger name="com.zaxxer.hikari" level="ERROR"/>
+
+    <!-- ===================== Root ===================== -->
+    <root level="ERROR">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_FILE"/>
+    </root>
+</configuration>
