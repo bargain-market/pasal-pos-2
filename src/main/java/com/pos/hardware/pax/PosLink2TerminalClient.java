@@ -726,11 +726,46 @@ public class PosLink2TerminalClient implements PaxTerminalClient {
     }
 
     private static Path resolveLibDir() {
-        Path libDir = Paths.get("lib", "pax");
-        if (!Files.isDirectory(libDir)) {
-            libDir = Paths.get(System.getProperty("user.dir"), "lib", "pax");
+        // Try, in priority order, every place the SDK jars might live so the loader works
+        // both when run from a source checkout (cwd/lib/pax) AND from a jpackage install,
+        // where the jars are bundled next to the app jar (…/app/lib/pax) and the process
+        // working directory is NOT the app dir.
+        List<Path> candidates = new ArrayList<>();
+        candidates.add(Paths.get("lib", "pax"));
+        candidates.add(Paths.get(System.getProperty("user.dir"), "lib", "pax"));
+
+        Path appDir = codeSourceDir();
+        if (appDir != null) {
+            candidates.add(appDir.resolve("lib").resolve("pax")); // …/app/lib/pax (jpackage)
+            candidates.add(appDir.resolve("pax"));                // …/app/pax (jars placed directly)
+            Path parent = appDir.getParent();
+            if (parent != null) {
+                candidates.add(parent.resolve("lib").resolve("pax")); // …/<install>/lib/pax
+            }
         }
-        return libDir;
+
+        for (Path candidate : candidates) {
+            if (candidate != null && Files.isDirectory(candidate)) {
+                return candidate;
+            }
+        }
+        // Nothing found — return the cwd default so getSdkLoadHint() reports the missing folder.
+        return candidates.get(0);
+    }
+
+    /** Directory containing the running jar (or classes dir in dev), or null if undeterminable. */
+    private static Path codeSourceDir() {
+        try {
+            var codeSource = PosLink2TerminalClient.class.getProtectionDomain().getCodeSource();
+            if (codeSource == null || codeSource.getLocation() == null) {
+                return null;
+            }
+            Path location = Paths.get(codeSource.getLocation().toURI());
+            return Files.isRegularFile(location) ? location.getParent() : location;
+        } catch (Exception e) {
+            logger.debug("Could not resolve code source location for PAX lib lookup", e);
+            return null;
+        }
     }
 
     private static List<String> listJarNames(Path libDir) {
