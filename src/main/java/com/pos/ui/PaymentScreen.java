@@ -1008,7 +1008,7 @@ public class PaymentScreen extends BorderPane {
         status.setStyle("-fx-text-fill: #4CAF50;");
         this.cardStatusLabel = status;
 
-        Label hint = new Label("Click 'Complete Payment' to charge the card terminal");
+        Label hint = new Label("Follow the prompts on the card terminal");
         hint.setFont(Font.font("System", FontWeight.NORMAL, 12));
         hint.setStyle("-fx-text-fill: #666;");
 
@@ -1821,13 +1821,20 @@ public class PaymentScreen extends BorderPane {
             case "CARD":
                 showPanel(cardPaymentPanel);
                 highlightSelectedButton(cardBtn);
-                completePaymentBtn.setDisable(false);
                 // Use list price total for card payments (includes card surcharge)
                 amountReceived = listTotal;
                 refreshCardTerminalReadyStatus();
                 // Update amount due to list total (card pricing)
                 if (amountDueLabel != null) {
                     amountDueLabel.setText(currencyFormat.format(listTotal));
+                }
+                // Selecting CARD sends the sale straight to the terminal (e.g. PAX A920) —
+                // no separate "Complete Payment" click. If the terminal isn't in use (PAX
+                // disabled), fall back to the manual complete button.
+                if (paxTerminalService.shouldUseTerminalForCard() || paxTerminalService.isTestingMode()) {
+                    processPayment();
+                } else {
+                    completePaymentBtn.setDisable(false);
                 }
                 break;
             case "EBT":
@@ -2089,9 +2096,16 @@ public class PaymentScreen extends BorderPane {
                     return;
                 }
                 if (resultError != null) {
-                    resetCompletePaymentButton();
                     if ("CARD".equals(paymentMethodSnapshot)) {
-                        updateCardTerminalStatus("Terminal: Declined", "#e94560");
+                        boolean timedOut = isTimeoutError(resultError);
+                        updateCardTerminalStatus(
+                                timedOut ? "Terminal: No response — tap Retry"
+                                        : "Terminal: Declined — tap Retry",
+                                "#e94560");
+                        // Leave the CARD flow on a Retry button that re-sends to the terminal.
+                        showCardRetryButton();
+                    } else {
+                        resetCompletePaymentButton();
                     }
                     String message = resultError instanceof PaxTerminalException
                             ? resultError.getMessage()
@@ -2117,6 +2131,34 @@ public class PaymentScreen extends BorderPane {
             completePaymentBtn.setDisable(false);
             completePaymentBtn.setText("COMPLETE PAYMENT");
         }
+    }
+
+    /**
+     * After a failed/timed-out card transaction, turn the main button into a RETRY that
+     * re-sends the sale to the terminal (its action is already {@link #processPayment()}).
+     * Payment-method buttons are unlocked too, so the cashier can retry the card or switch
+     * to another tender.
+     */
+    private void showCardRetryButton() {
+        paymentProcessing = false;
+        setPaymentMethodButtonsLocked(false);
+        if (completePaymentBtn != null) {
+            completePaymentBtn.setVisible(true);
+            completePaymentBtn.setManaged(true);
+            completePaymentBtn.setDisable(false);
+            completePaymentBtn.setText("RETRY CARD PAYMENT");
+        }
+    }
+
+    /** True when a card error looks like a terminal/network timeout rather than a decline. */
+    private static boolean isTimeoutError(Exception e) {
+        String message = e.getMessage();
+        if (message == null) {
+            return false;
+        }
+        String lower = message.toLowerCase(java.util.Locale.ROOT);
+        return lower.contains("timeout") || lower.contains("timed out")
+                || lower.contains("no response") || lower.contains("connect");
     }
 
     private void resetSplitPaymentButton() {
