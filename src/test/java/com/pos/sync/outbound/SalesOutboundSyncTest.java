@@ -3,6 +3,10 @@ package com.pos.sync.outbound;
 import com.pos.config.ConfigManager;
 import com.pos.database.DatabaseManager;
 import com.pos.api.dto.SaleSubmission;
+import com.pos.api.ApiClient;
+import com.pos.api.dto.BatchSaleRequest;
+import com.pos.api.dto.BatchSaleResponse;
+import com.pos.sync.SyncResult;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,6 +18,9 @@ import java.util.List;
 
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
 
 public class SalesOutboundSyncTest {
 
@@ -45,6 +52,86 @@ public class SalesOutboundSyncTest {
             stmt.execute("DELETE FROM products");
             conn.commit();
         }
+    }
+
+    @Test
+    public void validSaleBehindFiftyInvalidSalesStillUploads() throws Exception {
+        seedQueue(false);
+        Method method = SalesOutboundSync.class.getDeclaredMethod("getPendingSales", int.class);
+        method.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<SaleSubmission> pending = (List<SaleSubmission>) method.invoke(SalesOutboundSync.getInstance(), 50);
+        assertTrue("Invalid older sales must not block newer valid sales", pending.stream().anyMatch(s -> "QUEUE-50".equals(s.saleId)));
+    }
+
+    private void seedQueue(boolean allValid) throws Exception {
+        try (Connection conn = dbManager.getConnection(); Statement stmt = conn.createStatement()) {
+            for (int i = 0; i < 51; i++) {
+                stmt.execute("INSERT INTO sales (id, sale_id, subtotal, discount, tax, total, payment_method, cashier_name, timestamp, synced, created_at) " +
+                        "VALUES ('queue-" + i + "', 'QUEUE-" + i + "', 10, 0, 0, 10, 'CASH', 'Cashier', '2026-09-08T12:00:00Z', FALSE, DATEADD('SECOND', " + i + ", TIMESTAMP '2026-09-08 12:00:00'))");
+            }
+            stmt.execute("INSERT INTO products (id, sku, name, price, stock_quantity) VALUES ('queue-product', 'QUEUE-SKU', 'Item', 10, 100)");
+            for (int i = allValid ? 0 : 50; i < 51; i++) {
+                stmt.execute("INSERT INTO sale_items (sale_id, product_id, sku, name, price, quantity, subtotal) VALUES ('QUEUE-" + i + "', 'queue-product', 'QUEUE-SKU', 'Item', 10, 1, 10)");
+            }
+            conn.commit();
+        }
+    }
+
+    @Test
+    public void rejectedBatchDoesNotBlockLaterSalesAndRetriesNextRun() throws Exception {
+        seedQueue(true);
+        ApiClient client = mock(ApiClient.class);
+        var constructor = SalesOutboundSync.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        SalesOutboundSync sync = constructor.newInstance();
+        var apiField = SalesOutboundSync.class.getDeclaredField("apiClient");
+        apiField.setAccessible(true);
+        apiField.set(sync, client);
+        java.util.concurrent.atomic.AtomicBoolean rejectOlder = new java.util.concurrent.atomic.AtomicBoolean(true);
+        when(client.post(eq("/pos/sales/batch"), any(BatchSaleRequest.class), eq(BatchSaleResponse.class)))
+                .thenAnswer(invocation -> {
+                    BatchSaleRequest request = invocation.getArgument(1);
+                    BatchSaleResponse response = new BatchSaleResponse();
+                    response.results = new java.util.ArrayList<>();
+                    for (SaleSubmission sale : request.sales) {
+                        BatchSaleResponse.BatchSaleResult result = new BatchSaleResponse.BatchSaleResult();
+                        result.saleId = sale.saleId;
+                        boolean rejected = rejectOlder.get() && !"QUEUE-50".equals(sale.saleId);
+                        result.status = rejected ? "failed" : "created";
+                        result.error = rejected ? "Sale validation failed" : null;
+                        if (rejected) response.failed++; else response.processed++;
+                        response.results.add(result);
+                    }
+                    return new ApiClient.ApiResponse<>(response, 200);
+                });
+        SyncResult first = sync.sync();
+        assertEquals(1, first.getSynced());
+        assertEquals(50, first.getFailed());
+        assertEquals("Rejected sales must remain pending", 50, sync.getPendingSalesCount());
+        rejectOlder.set(false);
+        SyncResult retry = sync.sync();
+        assertEquals(50, retry.getSynced());
+        assertEquals(0, sync.getPendingSalesCount());
+        verify(client, times(3)).post(eq("/pos/sales/batch"), any(BatchSaleRequest.class), eq(BatchSaleResponse.class));
+    }
+
+    @Test
+    public void networkFailureStopsRunAndPreservesAllSales() throws Exception {
+        seedQueue(true);
+        ApiClient client = mock(ApiClient.class);
+        var constructor = SalesOutboundSync.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        SalesOutboundSync sync = constructor.newInstance();
+        var apiField = SalesOutboundSync.class.getDeclaredField("apiClient");
+        apiField.setAccessible(true);
+        apiField.set(sync, client);
+        when(client.post(eq("/pos/sales/batch"), any(BatchSaleRequest.class), eq(BatchSaleResponse.class)))
+                .thenThrow(new ApiClient.ApiException("Network unavailable"));
+        SyncResult result = sync.sync();
+        assertEquals(0, result.getSynced());
+        assertEquals(51, sync.getPendingSalesCount());
+        verify(client, times(1)).post(eq("/pos/sales/batch"), any(BatchSaleRequest.class), eq(BatchSaleResponse.class));
     }
 
     @Test

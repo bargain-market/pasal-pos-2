@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -96,11 +97,14 @@ public class SalesOutboundSync implements SyncManager.OutboundSyncHandler {
         int totalFailed = 0;
         StringBuilder allErrors = new StringBuilder();
 
-        // Keep processing batches until no more pending sales or a batch fails
+        // Snapshot IDs once: failures remain pending but cannot starve later sales.
+        PendingSalesScan scan = new PendingSalesScan(getPendingSaleIds().iterator());
+        List<SaleSubmission> retrySales = null;
         int productRecoveryPasses = 0;
         while (true) {
-            // Get pending sales
-            List<SaleSubmission> pendingSales = getPendingSales(BATCH_SIZE);
+            List<SaleSubmission> pendingSales = retrySales != null
+                    ? retrySales : getPendingSales(BATCH_SIZE, scan);
+            retrySales = null;
 
             if (pendingSales.isEmpty()) {
                 break; // No more pending sales
@@ -157,12 +161,17 @@ public class SalesOutboundSync implements SyncManager.OutboundSyncHandler {
                             logger.error("Product outbound sync after product-not-found errors failed: {}", ex.getMessage(),
                                     ex);
                         }
+                        Set<String> failedIds = response.results.stream()
+                                .filter(r -> "failed".equals(r.status))
+                                .map(r -> r.saleId).collect(Collectors.toSet());
+                        retrySales = pendingSales.stream().filter(s -> failedIds.contains(s.saleId))
+                                .collect(Collectors.toList());
                         continue;
                     }
                     totalFailed += batchFailed;
-                    logger.error("Sales sync batch failed: {} synced, {} failed. Stopping sync for remaining items.",
+                    logger.error("Sales sync batch failed: {} synced, {} failed. Retaining failures and continuing remaining sales.",
                             batchSynced, batchFailed);
-                    break; // STOP here as per requirement: do not proceed to next batch if any failed
+                    productRecoveryPasses = 0;
                 } else {
                     productRecoveryPasses = 0;
                     logger.info("Sales sync batch completed: {} synced, {} failed", batchSynced, batchFailed);
@@ -179,6 +188,11 @@ public class SalesOutboundSync implements SyncManager.OutboundSyncHandler {
             }
         }
 
+        totalFailed += scan.invalidCount;
+        if (scan.invalidCount > 0) {
+            if (allErrors.length() > 0) allErrors.append("; ");
+            allErrors.append(scan.invalidCount).append(" local sales could not be reconstructed; see sale sync errors");
+        }
         if (totalSynced == 0 && totalFailed == 0) {
             logger.debug("No pending sales to sync");
             return SyncResult.empty(SyncDirection.OUTBOUND);
@@ -192,47 +206,52 @@ public class SalesOutboundSync implements SyncManager.OutboundSyncHandler {
      * Get pending sales from local database.
      */
     private List<SaleSubmission> getPendingSales(int limit) throws SQLException {
-        try (Connection conn = dbManager.getConnection()) {
-            // First, get count of pending sales
-            String countSql = "SELECT COUNT(*) FROM sales WHERE synced = FALSE";
-            int totalPending = 0;
-            try (PreparedStatement countStmt = conn.prepareStatement(countSql)) {
-                ResultSet countRs = countStmt.executeQuery();
-                if (countRs.next()) {
-                    totalPending = countRs.getInt(1);
-                }
-            }
-            logger.debug("Found {} total pending sales in database", totalPending);
+        return getPendingSales(limit, new PendingSalesScan(getPendingSaleIds().iterator()));
+    }
 
-            String sql = """
-                    SELECT * FROM sales
-                    WHERE synced = FALSE
-                    ORDER BY created_at ASC
-                    LIMIT ?
-                    """;
+    private static class PendingSalesScan {
+        final Iterator<String> ids;
+        int invalidCount;
 
-            List<SaleSubmission> pendingSales = new ArrayList<>();
+        PendingSalesScan(Iterator<String> ids) { this.ids = ids; }
+    }
 
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setInt(1, limit);
-                ResultSet rs = stmt.executeQuery();
+    private List<String> getPendingSaleIds() throws SQLException {
+        List<String> ids = new ArrayList<>();
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "SELECT sale_id FROM sales WHERE synced = FALSE ORDER BY created_at ASC, sale_id ASC");
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) ids.add(rs.getString("sale_id"));
+        }
+        return ids;
+    }
 
-                while (rs.next()) {
-                    String saleId = rs.getString("sale_id");
+    private List<SaleSubmission> getPendingSales(int limit, PendingSalesScan scan) throws SQLException {
+        List<SaleSubmission> pendingSales = new ArrayList<>();
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM sales WHERE synced = FALSE AND sale_id = ?")) {
+            while (scan.ids.hasNext() && pendingSales.size() < limit) {
+                String saleId = scan.ids.next();
+                stmt.setString(1, saleId);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (!rs.next()) continue;
                     try {
                         SaleSubmission submission = reconstructSaleSubmission(conn, saleId, rs);
                         if (submission != null && validateSaleSubmission(submission, conn)) {
                             pendingSales.add(submission);
                         } else {
-                            logger.warn("Skipping invalid sale {}: missing required fields or products not synced", saleId);
+                            scan.invalidCount++;
+                            markSaleAsFailed(saleId, "Missing required sale fields or local products; retained for retry");
                         }
                     } catch (Exception e) {
                         logger.error("Error reconstructing sale {}: {}", saleId, e.getMessage(), e);
+                        scan.invalidCount++;
+                        markSaleAsFailed(saleId, "Cannot reconstruct sale: " + e.getMessage());
                     }
                 }
             }
 
-            logger.debug("Retrieved {} valid pending sales out of {} total pending", pendingSales.size(), totalPending);
             return pendingSales;
         }
     }
