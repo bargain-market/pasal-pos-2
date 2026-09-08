@@ -83,6 +83,9 @@ public class PaymentScreen extends BorderPane {
     // Callbacks
     private final Runnable onPaymentComplete;
     private final Runnable onCancel;
+    private Button backToSaleButton;
+    private boolean cancellationRequested;
+    private String pendingPaymentReference;
     private final Runnable onNavigateToSplit;
 
     // Left panel receipt preview — content is rebuilt per sale on reuse
@@ -419,6 +422,7 @@ public class PaymentScreen extends BorderPane {
 
         // Back button - always visible at bottom
         Button backBtn = new Button("< BACK TO SALE");
+        backToSaleButton = backBtn;
         backBtn.setMaxWidth(Double.MAX_VALUE);
         backBtn.setMinHeight(60);
         backBtn.setPrefHeight(60);
@@ -1967,6 +1971,7 @@ public class PaymentScreen extends BorderPane {
      * abandon a card payment that the terminal is still processing.
      */
     private void setPaymentMethodButtonsLocked(boolean locked) {
+        if (backToSaleButton != null) backToSaleButton.setText(locked ? "CANCEL PENDING PAYMENT" : "< BACK TO SALE");
         if (cashBtn != null) {
             cashBtn.setDisable(locked);
         }
@@ -2002,6 +2007,7 @@ public class PaymentScreen extends BorderPane {
         }
 
         paymentProcessing = true;
+        cancellationRequested = false;
         completePaymentBtn.setDisable(true);
         completePaymentBtn.setText("Processing...");
         setPaymentMethodButtonsLocked(true);
@@ -2035,6 +2041,7 @@ public class PaymentScreen extends BorderPane {
         final BigDecimal finalTxTotalValue = finalTxTotal;
         final BigDecimal finalTxTaxValue = finalTxTax;
         final String provisionalSaleRef = generateProvisionalSaleRef();
+        pendingPaymentReference = provisionalSaleRef;
 
         final String cashierName = UserAuthService.getInstance().getCurrentUserName();
         final List<SaleItem> itemsSnapshot = new ArrayList<>(cartItems);
@@ -2088,8 +2095,14 @@ public class PaymentScreen extends BorderPane {
             final String resultReceipt = receiptText;
             final IllegalArgumentException resultValidation = validationError;
             final Exception resultError = processingError;
+            final PaxPaymentResult terminalResult = paxResult;
 
             Platform.runLater(() -> {
+                if (terminalResult != null && !terminalResult.approved && "100002".equals(terminalResult.resultCode)) {
+                    resetCompletePaymentButton();
+                    if (onCancel != null) onCancel.run();
+                    return;
+                }
                 if (resultValidation != null) {
                     resetCompletePaymentButton();
                     ToastNotification.showError(resultValidation.getMessage(), getScene().getWindow());
@@ -2125,6 +2138,7 @@ public class PaymentScreen extends BorderPane {
     }
 
     private void resetCompletePaymentButton() {
+        cancellationRequested = false;
         paymentProcessing = false;
         setPaymentMethodButtonsLocked(false);
         if (completePaymentBtn != null) {
@@ -2229,6 +2243,7 @@ public class PaymentScreen extends BorderPane {
             return;
 
         paymentProcessing = true;
+        cancellationRequested = false;
         setPaymentMethodButtonsLocked(true);
         if (splitProcessBtn != null) {
             splitProcessBtn.setDisable(true);
@@ -2639,6 +2654,41 @@ public class PaymentScreen extends BorderPane {
     }
 
     private void handleCancel() {
+        if (paymentProcessing) {
+            if (cancellationRequested) return;
+            // Split payments can already contain approved portions. Do not abandon
+            // them through the single-tender cancellation path.
+            if (!"CARD".equals(currentPaymentMethod)) {
+                ToastNotification.showWarning("Wait for this payment to finish before returning to the sale.",
+                        getScene().getWindow());
+                return;
+            }
+            cancellationRequested = true;
+            final String referenceToCancel = pendingPaymentReference;
+            backToSaleButton.setText("WAITING FOR TERMINAL…");
+            new Thread(() -> {
+                try {
+                    boolean sent = paxTerminalService.cancelPendingPayment(referenceToCancel);
+                    Platform.runLater(() -> {
+                        if (!paymentProcessing || !java.util.Objects.equals(referenceToCancel, pendingPaymentReference)) return;
+                        if (!sent) {
+                            cancellationRequested = false;
+                            backToSaleButton.setText("CANCEL PENDING PAYMENT");
+                            ToastNotification.showWarning("Terminal is connecting or finishing. Try Cancel again, or cancel on the terminal.",
+                                    getScene().getWindow());
+                        }
+                    });
+                } catch (PaxTerminalException e) {
+                    Platform.runLater(() -> {
+                        if (!paymentProcessing || !java.util.Objects.equals(referenceToCancel, pendingPaymentReference)) return;
+                        cancellationRequested = false;
+                        backToSaleButton.setText("CANCEL PENDING PAYMENT");
+                        ToastNotification.showError(e.getMessage(), getScene().getWindow());
+                    });
+                }
+            }, "CancelPendingCardPayment").start();
+            return;
+        }
         if (onCancel != null) {
             onCancel.run();
         }

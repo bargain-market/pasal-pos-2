@@ -481,7 +481,7 @@ public class HardwareSettingsScreen extends BorderPane {
     }
 
     private void testPaxConnection() {
-        savePaxConfiguration(false);
+        if (!savePaxConfiguration(false)) return;
         testPaxButton.setDisable(true);
         testPaxButton.setText("Testing...");
         new Thread(() -> {
@@ -519,14 +519,11 @@ public class HardwareSettingsScreen extends BorderPane {
         }, "PaxConnectionTest").start();
     }
 
-    private void savePaxConfiguration(boolean showSuccessAlert) {
+    private boolean savePaxConfiguration(boolean showSuccessAlert) {
         try {
-            configManager.setProperty("pax.enabled", String.valueOf(paxEnabledCheckBox.isSelected()));
-            configManager.setProperty("pax.comm.type", paxCommTypeCombo.getValue());
-            configManager.setProperty("pax.comm.host", paxHostField.getText().trim());
-            configManager.setProperty("pax.comm.port", paxPortField.getText().trim());
-            configManager.setProperty("pax.comm.timeoutMs", paxTimeoutField.getText().trim());
-            PaxTerminalService.getInstance().reloadClient();
+            PaxTerminalService.getInstance().saveSettings(paxEnabledCheckBox.isSelected(),
+                    paxCommTypeCombo.getValue(), paxHostField.getText(),
+                    paxPortField.getText(), paxTimeoutField.getText());
             if (paxStatusLabel != null) {
                 paxStatusLabel.setText(PaxTerminalService.getInstance().getStatusSummary());
             }
@@ -534,9 +531,11 @@ public class HardwareSettingsScreen extends BorderPane {
                 showAlert("Success", "Configuration saved successfully!\n" +
                         "Click 'Reinitialize Hardware' to apply printer/scanner changes.");
             }
+            return true;
         } catch (Exception e) {
             logger.error("Error saving PAX configuration", e);
             showAlert("Error", "Failed to save PAX configuration: " + e.getMessage());
+            return false;
         }
     }
 
@@ -565,7 +564,7 @@ public class HardwareSettingsScreen extends BorderPane {
             configManager.setProperty("printer.logicalName", printerLogicalNameField.getText().trim());
             configManager.setProperty("scanner.logicalName", scannerLogicalNameField.getText().trim());
             configManager.setProperty("cashdrawer.logicalName", cashDrawerLogicalNameField.getText().trim());
-            savePaxConfiguration(false);
+            if (!savePaxConfiguration(false)) return;
 
             showAlert("Success", "Configuration saved successfully!\n" +
                     "Click 'Reinitialize Hardware' to apply changes.");

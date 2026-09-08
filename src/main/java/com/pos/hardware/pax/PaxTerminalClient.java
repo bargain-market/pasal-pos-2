@@ -11,5 +11,7 @@ public interface PaxTerminalClient {
 
     PaxPaymentResult processSale(BigDecimal amount, String invoiceRef) throws PaxTerminalException;
 
+    default boolean cancelPendingPayment() throws PaxTerminalException { return false; }
+
     String testConnection() throws PaxTerminalException;
 }

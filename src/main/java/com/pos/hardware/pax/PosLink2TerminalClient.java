@@ -74,6 +74,7 @@ public class PosLink2TerminalClient implements PaxTerminalClient {
     private final Class<?> posLinkClass;
     private final Class<?> commSettingClass;
     private final Class<?> paymentRequestClass;
+    private final java.util.concurrent.atomic.AtomicReference<Object> pendingTerminal = new java.util.concurrent.atomic.AtomicReference<>();
 
     public PosLink2TerminalClient(PaxCommSettings settings) throws PaxTerminalException {
         this.settings = settings;
@@ -208,26 +209,53 @@ public class PosLink2TerminalClient implements PaxTerminalClient {
         if (!settings.isConfigured()) {
             throw new PaxTerminalException("PAX terminal host/port not configured");
         }
-        PaxPaymentResult ping = processSale(new BigDecimal("0.01"), "PAXTEST" + System.currentTimeMillis());
-        if (ping.approved) {
-            return "Connected to PAX terminal at " + settings.host + ":" + settings.port;
+        // A connection test must never submit a financial transaction.
+        if (sdkMode != SdkMode.SEMI_INTEGRATION) {
+            throw new PaxTerminalException("Non-payment connection test requires the POSLink 2 semi-integration SDK.");
         }
-        return "Terminal reachable but test transaction declined: " + ping.message;
+        try {
+            Object terminal = connectSemiIntegrationTerminal();
+            Object manage = terminal.getClass().getMethod("getManage").invoke(terminal);
+            Object result = manage.getClass().getMethod("init").invoke(manage);
+            if (!(Boolean) result.getClass().getMethod("isSuccessful").invoke(result)) {
+                throw new PaxTerminalException("Terminal connection check failed: "
+                        + result.getClass().getMethod("message").invoke(result));
+            }
+            return "Connected to PAX terminal at " + settings.host + ":" + settings.port;
+        } catch (PaxTerminalException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new PaxTerminalException("Terminal connection check failed: " + rootCauseMessage(e), e);
+        }
+    }
+
+    public synchronized boolean cancelPendingPayment() throws PaxTerminalException {
+        Object terminal = pendingTerminal.get();
+        if (terminal == null) return false;
+        try {
+            // Invoke the public SDK interface, including implementations with obfuscated names.
+            resolveClass("com.pax.poslinkadmin.BaseTerminal").getMethod("cancel").invoke(terminal);
+            return true;
+        } catch (Exception e) {
+            throw new PaxTerminalException("Could not request terminal cancellation: " + rootCauseMessage(e), e);
+        }
+    }
+
+    Object connectSemiIntegrationTerminal() throws Exception {
+        Class<?> semiClass = resolveClass(POS_LINK_SEMI_CLASS);
+        Object semi = semiClass.getMethod("getInstance").invoke(null);
+        Object commSetting = createSemiIntegrationCommSetting();
+        Class<?> communicationClass = resolveClass("com.pax.poscore.commsetting.CommunicationSetting");
+        Object terminal = semiClass.getMethod("getTerminal", communicationClass).invoke(semi, commSetting);
+        if (terminal == null) throw new PaxTerminalException(describeTerminalConnectFailure(commSetting));
+        return terminal;
     }
 
     private PaxPaymentResult processSaleSemiIntegration(BigDecimal amount, String invoiceRef)
             throws PaxTerminalException {
         try {
-            Class<?> semiClass = resolveClass(POS_LINK_SEMI_CLASS);
-            Object semi = semiClass.getMethod("getInstance").invoke(null);
-
-            Object commSetting = createSemiIntegrationCommSetting();
-
-            Class<?> commSettingClass = resolveClass("com.pax.poscore.commsetting.CommunicationSetting");
-            Object terminal = semiClass.getMethod("getTerminal", commSettingClass).invoke(semi, commSetting);
-            if (terminal == null) {
-                throw new PaxTerminalException(describeTerminalConnectFailure(commSetting));
-            }
+            Object terminal = connectSemiIntegrationTerminal();
+            pendingTerminal.set(terminal);
             Object transaction = terminal.getClass().getMethod("getTransaction").invoke(terminal);
 
             Class<?> doCreditRequestClass =
@@ -266,6 +294,8 @@ public class PosLink2TerminalClient implements PaxTerminalClient {
             throw e;
         } catch (Exception e) {
             throw new PaxTerminalException("PAX payment failed: " + rootCauseMessage(e), e);
+        } finally {
+            synchronized (this) { pendingTerminal.set(null); }
         }
     }
 

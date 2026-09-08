@@ -19,6 +19,8 @@ public class PaxTerminalService {
 
     private final ConfigManager configManager;
     private final AtomicReference<PaxTerminalClient> client = new AtomicReference<>();
+    private final AtomicReference<PaxTerminalClient> pendingClient = new AtomicReference<>();
+    private String pendingInvoiceRef;
     private volatile boolean clientOverriddenForTests = false;
 
     private PaxTerminalService() {
@@ -38,7 +40,8 @@ public class PaxTerminalService {
         instance = null;
     }
 
-    public void reloadClient() {
+    public synchronized void reloadClient() {
+        if (pendingClient.get() != null) throw new IllegalStateException("Wait for the terminal operation to finish.");
         clientOverriddenForTests = false;
         // JARs in lib/pax/ may have changed since last load — force a fresh detection.
         PosLink2TerminalClient.clearSdkPresenceCache();
@@ -58,6 +61,34 @@ public class PaxTerminalService {
         int timeoutMs = parseInt(configManager.getProperty("pax.comm.timeoutMs", "60000"), 60000);
         boolean logEnabled = Boolean.parseBoolean(configManager.getProperty("pax.log.enabled", "true"));
         return new PaxCommSettings(enabled, commType, host, port, timeoutMs, logEnabled);
+    }
+
+    public synchronized void saveSettings(boolean enabled, String type, String host,
+            String port, String timeout) {
+        if (pendingClient.get() != null) {
+            throw new IllegalStateException("Wait for the terminal operation to finish before changing settings.");
+        }
+        String normalizedHost = host != null ? host.trim() : "";
+        if (enabled && (!"TCP".equals(type) || normalizedHost.isEmpty()
+                || normalizedHost.contains("://") || normalizedHost.matches(".*\\s+.*"))) {
+            throw new IllegalArgumentException("Enter a terminal IP address or hostname and select TCP.");
+        }
+        int parsedPort;
+        int parsedTimeout;
+        try {
+            parsedPort = Integer.parseInt(port.trim());
+            parsedTimeout = Integer.parseInt(timeout.trim());
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Terminal port and timeout must be whole numbers.");
+        }
+        if (parsedPort < 1 || parsedPort > 65535 || parsedTimeout < 1000 || parsedTimeout > 300000) {
+            throw new IllegalArgumentException("Port must be 1–65535 and timeout 1000–300000 milliseconds.");
+        }
+        configManager.setPropertiesAtomically(java.util.Map.of(
+                "pax.enabled", String.valueOf(enabled),
+                "pax.comm.type", type, "pax.comm.host", normalizedHost,
+                "pax.comm.port", String.valueOf(parsedPort), "pax.comm.timeoutMs", String.valueOf(parsedTimeout)));
+        reloadClient();
     }
 
     public boolean isEnabled() {
@@ -86,7 +117,9 @@ public class PaxTerminalService {
     }
 
     public PaxPaymentResult processSale(BigDecimal amount, String invoiceRef) throws PaxTerminalException {
-        PaxTerminalClient activeClient = client.get();
+        PaxTerminalClient activeClient;
+        synchronized (this) {
+        activeClient = client.get();
         if (activeClient == null) {
             reloadClient();
             activeClient = client.get();
@@ -95,7 +128,11 @@ public class PaxTerminalService {
             throw new PaxTerminalException(PosLink2TerminalClient.getSdkLoadHint());
         }
         logger.info("Processing PAX sale: amount={}, ref={}", amount, invoiceRef);
-        return activeClient.processSale(amount, invoiceRef);
+            if (!pendingClient.compareAndSet(null, activeClient)) throw new PaxTerminalException("A terminal operation is already in progress.");
+            pendingInvoiceRef = invoiceRef;
+        }
+        try { return activeClient.processSale(amount, invoiceRef); }
+        finally { synchronized (this) { pendingClient.compareAndSet(activeClient, null); pendingInvoiceRef = null; } }
     }
 
     public List<PaxPaymentResult> processCardSplitPayments(List<BigDecimal> cardAmounts, String saleRefPrefix)
@@ -114,7 +151,24 @@ public class PaxTerminalService {
     }
 
     public String testConnection() throws PaxTerminalException {
-        return client.get().testConnection();
+        PaxTerminalClient active;
+        synchronized (this) {
+        active = client.get();
+        if (!pendingClient.compareAndSet(null, active)) {
+            throw new PaxTerminalException("Wait for the current terminal operation to finish.");
+        }
+        }
+        try {
+            return active.testConnection();
+        } finally {
+            pendingClient.compareAndSet(active, null);
+        }
+    }
+
+    public synchronized boolean cancelPendingPayment(String invoiceRef) throws PaxTerminalException {
+        PaxTerminalClient active = pendingClient.get();
+        return active != null && invoiceRef != null && invoiceRef.equals(pendingInvoiceRef)
+                && active.cancelPendingPayment();
     }
 
     public String getStatusSummary() {

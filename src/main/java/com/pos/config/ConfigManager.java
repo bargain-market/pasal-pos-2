@@ -266,7 +266,7 @@ public class ConfigManager {
      * Set a property value (for runtime configuration)
      * This will persist to data/config.properties
      */
-    public void setProperty(String key, String value) {
+    public synchronized void setProperty(String key, String value) {
         properties.setProperty(key, value);
         saveRuntimeConfig();
     }
@@ -275,6 +275,23 @@ public class ConfigManager {
      * Save runtime configuration to file
      */
     private void saveRuntimeConfig() {
+        saveRuntimeConfig(false);
+    }
+
+    public synchronized void setPropertiesAtomically(java.util.Map<String, String> values) {
+        Properties previous = new Properties();
+        previous.putAll(properties);
+        properties.putAll(values);
+        try {
+            saveRuntimeConfig(true);
+        } catch (RuntimeException e) {
+            properties = previous;
+            throw e;
+        }
+    }
+
+    private void saveRuntimeConfig(boolean failOnError) {
+        Path temporary = null;
         try {
             // Ensure data directory exists
             Path dataDir = configFilePath.getParent();
@@ -321,13 +338,22 @@ public class ConfigManager {
             }
 
             // Save to file
-            try (OutputStream output = Files.newOutputStream(configFilePath)) {
+            temporary = Files.createTempFile(configFilePath.toAbsolutePath().getParent(), "config-", ".tmp");
+            try (OutputStream output = Files.newOutputStream(temporary)) {
                 runtimeProps.store(output, "Pasal POS 2 Runtime Configuration\n" +
                         "This file is auto-generated. Do not edit manually.");
-                logger.debug("Saved runtime configuration to {}", configFilePath);
             }
+            Files.move(temporary, configFilePath.toAbsolutePath(),
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            logger.debug("Saved runtime configuration to {}", configFilePath);
         } catch (Exception e) {
             logger.error("Failed to save runtime configuration", e);
+            if (failOnError) throw new IllegalStateException("Could not save terminal settings to " + configFilePath, e);
+        } finally {
+            if (temporary != null) {
+                try { Files.deleteIfExists(temporary); } catch (IOException ignored) { }
+            }
         }
     }
 

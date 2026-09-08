@@ -197,13 +197,15 @@ public class ShiftCashReconciliationTest {
         cleanUpTestData();
 
         String shiftId = PREFIX + "refund-shift";
+        // The shift closes at the real current time: never seed a refund in its future.
+        String refundTime = java.time.Instant.now().toString();
         try (Connection conn = dbManager.getConnection()) {
-            insertShift(conn, shiftId, "cashier-r", "Refund Cashier", today + "T12:00:00Z",
+            insertShift(conn, shiftId, "cashier-r", "Refund Cashier", refundTime,
                     new BigDecimal("100.00"), new BigDecimal("50.00"));
             insertSale(conn, shiftId, PREFIX + "refund-sale", PREFIX + "refund-sale-row", "cashier-r",
-                    "Refund Cashier", today + "T12:10:00Z", new BigDecimal("50.00"));
+                    "Refund Cashier", refundTime, new BigDecimal("50.00"));
             insertRefund(conn, PREFIX + "refund-row", PREFIX + "refund-id", PREFIX + "refund-sale",
-                    "cashier-r", "Refund Cashier", today + "T12:20:00Z", "CASH", new BigDecimal("15.00"));
+                    "cashier-r", "Refund Cashier", refundTime, "CASH", new BigDecimal("15.00"));
             conn.commit();
         }
 
@@ -594,3 +596,4 @@ public class ShiftCashReconciliationTest {
         return count;
     }
 }
+
