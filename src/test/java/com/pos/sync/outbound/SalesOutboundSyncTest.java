@@ -65,13 +65,17 @@ public class SalesOutboundSyncTest {
     }
 
     private void seedQueue(boolean allValid) throws Exception {
+        seedQueue(allValid, 51);
+    }
+
+    private void seedQueue(boolean allValid, int count) throws Exception {
         try (Connection conn = dbManager.getConnection(); Statement stmt = conn.createStatement()) {
-            for (int i = 0; i < 51; i++) {
+            for (int i = 0; i < count; i++) {
                 stmt.execute("INSERT INTO sales (id, sale_id, subtotal, discount, tax, total, payment_method, cashier_name, timestamp, synced, created_at) " +
                         "VALUES ('queue-" + i + "', 'QUEUE-" + i + "', 10, 0, 0, 10, 'CASH', 'Cashier', '2026-09-08T12:00:00Z', FALSE, DATEADD('SECOND', " + i + ", TIMESTAMP '2026-09-08 12:00:00'))");
             }
             stmt.execute("INSERT INTO products (id, sku, name, price, stock_quantity) VALUES ('queue-product', 'QUEUE-SKU', 'Item', 10, 100)");
-            for (int i = allValid ? 0 : 50; i < 51; i++) {
+            for (int i = allValid ? 0 : count - 1; i < count; i++) {
                 stmt.execute("INSERT INTO sale_items (sale_id, product_id, sku, name, price, quantity, subtotal) VALUES ('QUEUE-" + i + "', 'queue-product', 'QUEUE-SKU', 'Item', 10, 1, 10)");
             }
             conn.commit();
@@ -114,6 +118,38 @@ public class SalesOutboundSyncTest {
         assertEquals(50, retry.getSynced());
         assertEquals(0, sync.getPendingSalesCount());
         verify(client, times(3)).post(eq("/pos/sales/batch"), any(BatchSaleRequest.class), eq(BatchSaleResponse.class));
+    }
+
+    @Test
+    public void drains5039SalesInBoundedBatches() throws Exception {
+        seedQueue(true, 5039);
+        ApiClient client = mock(ApiClient.class);
+        var constructor = SalesOutboundSync.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        SalesOutboundSync sync = constructor.newInstance();
+        var apiField = SalesOutboundSync.class.getDeclaredField("apiClient");
+        apiField.setAccessible(true);
+        apiField.set(sync, client);
+        java.util.Set<String> accepted = new java.util.HashSet<>();
+        when(client.post(eq("/pos/sales/batch"), any(BatchSaleRequest.class), eq(BatchSaleResponse.class)))
+                .thenAnswer(invocation -> {
+                    BatchSaleRequest request = invocation.getArgument(1);
+                    assertTrue(request.sales.size() <= 50);
+                    BatchSaleResponse response = new BatchSaleResponse();
+                    response.results = new java.util.ArrayList<>();
+                    for (SaleSubmission sale : request.sales) {
+                        assertTrue("Each sale uploaded once", accepted.add(sale.saleId));
+                        BatchSaleResponse.BatchSaleResult result = new BatchSaleResponse.BatchSaleResult();
+                        result.saleId = sale.saleId;
+                        result.status = "created";
+                        response.results.add(result);
+                        response.processed++;
+                    }
+                    return new ApiClient.ApiResponse<>(response, 200);
+                });
+        assertEquals(5039, sync.sync().getSynced());
+        assertEquals(0, sync.getPendingSalesCount());
+        verify(client, times(101)).post(eq("/pos/sales/batch"), any(BatchSaleRequest.class), eq(BatchSaleResponse.class));
     }
 
     @Test
