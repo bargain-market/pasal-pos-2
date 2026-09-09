@@ -178,8 +178,8 @@ public class SettingsScreen extends BorderPane {
         syncStatusLabel = new Label("Checking...");
         syncStatusLabel.setWrapText(true);
         Label syncQueueNote = new Label(
-                "If sync is stuck, use “Mark All as Synced” to clear the local queue in one batch. "
-                        + "Unsynced data will not be sent to the server.");
+                "Use Sync Now to upload pending records to the website and mobile app. "
+                        + "Mark All as Synced only clears local pending status; it does not upload records.");
         syncQueueNote.setWrapText(true);
         syncQueueNote.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
         syncSection.getChildren().addAll(syncStatusLabel, syncQueueNote);
@@ -856,15 +856,20 @@ public class SettingsScreen extends BorderPane {
     private void confirmMarkAllPendingAsSynced() {
         Alert confirmAlert = new Alert(Alert.AlertType.WARNING);
         confirmAlert.setTitle("Mark All as Synced");
-        confirmAlert.setHeaderText("Clear the entire local sync queue?");
+        confirmAlert.setHeaderText("This does not upload your data");
         confirmAlert.setContentText(
-                "This will batch-mark all pending sales, shifts, products, and other outbound "
-                        + "records as synced on this device, and remove queued offline API requests.\n\n"
-                        + "Nothing will be uploaded to the server. Use only if you accept losing "
-                        + "unsynced data or have fixed issues another way.");
-        confirmAlert.getButtonTypes().setAll(ButtonType.CANCEL, ButtonType.OK);
+                "This clears the pending sync status on this POS and removes queued offline API requests. "
+                        + "Unsent sales will not appear on the website or mobile app.\n\n"
+                        + "Recovering them afterward may require a backup or technical assistance. "
+                        + "Restoring an older backup can overwrite newer sales.\n\n"
+                        + "To upload your records, choose Cancel, then Sync Now.");
+        ButtonType markLocally = new ButtonType("Mark locally without uploading",
+                javafx.scene.control.ButtonBar.ButtonData.OTHER);
+        confirmAlert.getButtonTypes().setAll(ButtonType.CANCEL, markLocally);
+        ((Button) confirmAlert.getDialogPane().lookupButton(markLocally)).setDefaultButton(false);
+        ((Button) confirmAlert.getDialogPane().lookupButton(ButtonType.CANCEL)).setDefaultButton(true);
         Optional<ButtonType> result = confirmAlert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
+        if (result.isPresent() && result.get() == markLocally) {
             markAllPendingAsSynced();
         }
     }
