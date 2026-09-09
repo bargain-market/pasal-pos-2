@@ -244,7 +244,11 @@ public class HardwareManager {
                     || n.contains("citizen")
                     || n.contains("ct-s")
                     || n.contains("escpos")
-                    || n.contains("epson");
+                    || n.contains("epson")
+                    || n.contains("xprinter")
+                    || n.contains("x printer")
+                    || n.startsWith("xp-")
+                    || n.startsWith("sx-82");
             if (thermalLike) {
                 thermalMatches.add(service);
             }

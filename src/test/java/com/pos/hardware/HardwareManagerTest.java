@@ -45,6 +45,16 @@ public class HardwareManagerTest {
         assertNull(select(new javax.print.PrintService[] {pdf}, pdf, "Missing queue"));
     }
 
+    @Test
+    public void replacementXprinterQueuesAreDetectedWithoutConfiguration() throws Exception {
+        javax.print.PrintService pdf = queue("Microsoft Print to PDF");
+        for (String name : new String[] {"XPrinter", "X Printer", "XP-80C", "SX-82V"}) {
+            javax.print.PrintService replacement = queue(name);
+            assertSame(replacement, select(new javax.print.PrintService[] {pdf, replacement},
+                    pdf, ""));
+        }
+    }
+
     private HardwareManager hardwareManager;
 
     @Before
