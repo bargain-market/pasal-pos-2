@@ -114,6 +114,8 @@ public class SyncManager {
     // Sync state tracking
     private final AtomicBoolean isInboundSyncing = new AtomicBoolean(false);
     private final AtomicBoolean isOutboundSyncing = new AtomicBoolean(false);
+    private final AtomicBoolean outboundRequested = new AtomicBoolean(false);
+    private final AtomicBoolean outboundTaskQueued = new AtomicBoolean(false);
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
     private volatile Instant lastInboundSync = null;
     private volatile Instant lastOutboundSync = null;
@@ -300,6 +302,7 @@ public class SyncManager {
 
             // If we just came online, connect WebSocket
             if (isOnline && !isShuttingDown.get()) {
+                triggerOutboundSync();
                 if (!wasOnline) {
                     webSocketClient.resetReconnectState();
                 }
@@ -496,6 +499,7 @@ public class SyncManager {
     public SyncResult performOutboundSync() {
         logger.info("🔄 MANUAL outbound sync requested (WebSocket handles real-time updates)");
         if (!isOutboundSyncing.compareAndSet(false, true)) {
+            outboundRequested.set(true);
             logger.debug("Outbound sync already in progress, skipping");
             return new SyncResult(SyncDirection.OUTBOUND, 0, 0, "Sync already in progress");
         }
@@ -539,6 +543,7 @@ public class SyncManager {
         } finally {
             isOutboundSyncing.set(false);
             notifyStatusListeners();
+            if (outboundRequested.get()) triggerOutboundSync();
         }
 
         if (totalSynced > 0 || totalFailed > 0) {
@@ -646,10 +651,31 @@ public class SyncManager {
      * Useful for triggering outbound sync after inbound sync completes.
      */
     public void triggerOutboundSync() {
-        safeExecute(() -> {
-            logger.debug("Triggering outbound sync asynchronously");
-            performOutboundSync();
-        });
+        if (isShuttingDown.get() || scheduler.isShutdown()) return;
+        outboundRequested.set(true);
+        if (!outboundTaskQueued.compareAndSet(false, true)) return;
+        try {
+            scheduler.execute(() -> {
+                try {
+                    while (!isShuttingDown.get() && outboundRequested.getAndSet(false)) {
+                        if (isOutboundSyncing.get()) {
+                            // A manual run owns the uploader. Retain this request for its completion.
+                            outboundRequested.set(true);
+                            break;
+                        }
+                        performOutboundSync();
+                    }
+                } catch (Exception e) {
+                    logger.error("Automatic outbound sync failed; periodic sync will retry", e);
+                } finally {
+                    outboundTaskQueued.set(false);
+                    if (outboundRequested.get() && !isOutboundSyncing.get()) triggerOutboundSync();
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            outboundTaskQueued.set(false);
+            logger.debug("Outbound task rejected during shutdown", e);
+        }
     }
 
     private void safeExecute(Runnable task) {

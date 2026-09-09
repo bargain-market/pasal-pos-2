@@ -220,7 +220,9 @@ public class SalesOutboundSync implements SyncManager.OutboundSyncHandler {
         List<String> ids = new ArrayList<>();
         try (Connection conn = dbManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(
-                     "SELECT sale_id FROM sales WHERE synced = FALSE ORDER BY created_at ASC, sale_id ASC");
+                     "SELECT sale_id FROM sales WHERE synced = FALSE "
+                     + "ORDER BY CASE WHEN sync_error IS NULL OR sync_error = '' THEN 0 ELSE 1 END, "
+                     + "created_at ASC, sale_id ASC");
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) ids.add(rs.getString("sale_id"));
         }

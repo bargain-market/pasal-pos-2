@@ -68,6 +68,22 @@ public class SalesOutboundSyncTest {
         seedQueue(allValid, 51);
     }
 
+    @Test
+    public void freshSalesUploadBeforePreviouslyRejectedSalesWithoutDroppingRetries() throws Exception {
+        seedQueue(true);
+        try (Connection conn = dbManager.getConnection(); Statement stmt = conn.createStatement()) {
+            stmt.execute("UPDATE sales SET sync_error = 'Previous rejection' WHERE sale_id <> 'QUEUE-50'");
+            conn.commit();
+        }
+        Method method = SalesOutboundSync.class.getDeclaredMethod("getPendingSaleIds");
+        method.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<String> ids = (List<String>) method.invoke(SalesOutboundSync.getInstance());
+        assertEquals("QUEUE-50", ids.get(0));
+        assertEquals(51, ids.size());
+        assertEquals("QUEUE-0", ids.get(1));
+    }
+
     private void seedQueue(boolean allValid, int count) throws Exception {
         try (Connection conn = dbManager.getConnection(); Statement stmt = conn.createStatement()) {
             for (int i = 0; i < count; i++) {
