@@ -205,6 +205,13 @@ public class HardwareManager {
                 matches.add(service);
             }
             String cTrim = candidate.trim();
+            // An explicitly selected queue must win, including the Windows default.
+            // Otherwise a stale "(Copy 1)" queue can override the replacement printer.
+            for (PrintService match : matches) {
+                if (match.getName().equalsIgnoreCase(cTrim)) {
+                    return match;
+                }
+            }
             matches.sort((a, b) -> {
                 boolean ea = a.getName().equalsIgnoreCase(cTrim);
                 boolean eb = b.getName().equalsIgnoreCase(cTrim);
