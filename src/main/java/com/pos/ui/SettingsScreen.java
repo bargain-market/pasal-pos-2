@@ -1051,26 +1051,16 @@ public class SettingsScreen extends BorderPane {
 
         Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
         confirmAlert.setTitle("Restore Backup");
-        confirmAlert.setHeaderText("Queue Database Restore");
+        DialogHelper.setAlertOwner(confirmAlert, getScene() != null ? getScene().getWindow() : null);
+        confirmAlert.setHeaderText("Verify Backup and Protect Current Data");
         confirmAlert.setContentText(
                 "Selected backup:\n" + selectedFile.getAbsolutePath() + "\n\n" +
-                        "The app will create a safety snapshot, queue this restore, and close.\n" +
-                        "When you launch the app again, the selected backup will be applied before startup.\n\n" +
-                        "Continue?");
-        DialogHelper.setAlertOwner(confirmAlert, getScene() != null ? getScene().getWindow() : null);
-        confirmAlert.setHeaderText("Complete System Reset");
-        confirmAlert.setContentText(
-                "WARNING: This will permanently delete local data.\n\n" +
-                        "- A safety database backup will be created first when available\n" +
-                        "- All database data (products, sales, users, etc.)\n" +
-                        "- Device registration information\n" +
-                        "- User session and authentication tokens\n" +
-                        "- Cached files and logs (for privacy)\n\n" +
-                        "This action cannot be undone.\n\n" +
-                        "After reset, you will need to:\n" +
-                        "1. Register the device again\n" +
-                        "2. Re-sync all data from the backend\n\n" +
-                        "Are you sure you want to continue?");
+                        "1. Check that the backup database can be read.\n" +
+                        "2. Create and verify a safety backup of current data.\n" +
+                        "3. Block recovery if it would remove current or changed records.\n\n" +
+                        "If safe, the app will close and restore on next launch. " +
+                        "The check runs again before replacing any files, and original files are kept.\n\n" +
+                        "An older backup may require support to recover individual records safely.\n\nContinue?");
 
         Optional<ButtonType> result = confirmAlert.showAndWait();
         if (result.isEmpty() || result.get() != ButtonType.OK) {

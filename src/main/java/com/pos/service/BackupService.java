@@ -241,6 +241,7 @@ public class BackupService {
         validateRestoreArchive(normalizedBackup);
 
         BackupInfo safetySnapshot = createPreRestoreSnapshot();
+        BackupSafety.requireNoLostRecords(inspectBackup(safetySnapshot.path), inspectBackup(normalizedBackup));
         config.setProperty(PENDING_RESTORE_FILE_KEY, normalizedBackup.toString());
         config.setProperty(PENDING_RESTORE_REQUESTED_AT_KEY, Instant.now().toString());
 
@@ -261,9 +262,25 @@ public class BackupService {
         }
 
         try {
+            // Check again at startup: sales may have changed after the restore was queued.
+            Path currentBase = resolveDatabaseBasePath();
+            if (Files.exists(Paths.get(currentBase + ".mv.db"))) {
+                try {
+                    BackupSafety.requireNoLostRecords(
+                            BackupSafety.inspectDatabase(currentBase, config.getProperty("database.user"),
+                                    config.getProperty("database.password")),
+                            inspectBackup(pendingRestore));
+                } catch (Exception e) {
+                    throw new IOException("Restore stopped to protect current data: " + e.getMessage(), e);
+                }
+            }
             applyRestore(pendingRestore);
+            config.setProperty("backup.restore.lastResult", "Restore completed; original files preserved beside the database.");
             logger.info("Pending database restore applied successfully from {}", pendingRestore);
             return true;
+        } catch (IOException e) {
+            config.setProperty("backup.restore.lastResult", e.getMessage());
+            throw e;
         } finally {
             clearPendingRestore();
         }
@@ -302,6 +319,8 @@ public class BackupService {
         Path pendingRestore = getPendingRestoreFile();
         summary.append("\nPending restore: ")
                 .append(pendingRestore != null ? pendingRestore.getFileName() + " on next launch" : "None");
+        summary.append("\nLast verified backup: ").append(config.getProperty("backup.lastVerifiedAt", "Not yet verified"));
+        summary.append("\nLast recovery result: ").append(config.getProperty("backup.restore.lastResult", "None"));
 
         summary.append("\nRetention: ")
                 .append(getHourlyRetentionHours()).append(" hourly / ")
@@ -334,6 +353,9 @@ public class BackupService {
                     + FILE_TIMESTAMP_FORMAT.format(LocalDateTime.ofInstant(createdAt, ZoneId.systemDefault()))
                     + ".zip";
             Path backupPath = backupDirectory.resolve(fileName);
+            if (Files.exists(backupPath)) {
+                throw new IOException("A backup was already created this second. Please try again.");
+            }
 
             String backupSqlPath = backupPath.toAbsolutePath().toString()
                     .replace("\\", "/")
@@ -349,7 +371,16 @@ public class BackupService {
                 throw new IOException("Failed to create database backup: " + e.getMessage(), e);
             }
 
+            try {
+                validateRestoreArchive(backupPath);
+            } catch (IOException e) {
+                // Do not list a failed verification as a usable backup or prune older backups.
+                Files.move(backupPath, backupPath.resolveSibling(backupPath.getFileName() + ".unverified"),
+                        StandardCopyOption.REPLACE_EXISTING);
+                throw e;
+            }
             BackupInfo backupInfo = buildBackupInfo(backupPath, trigger, createdAt);
+            config.setProperty("backup.lastVerifiedAt", formatInstant(createdAt));
             pruneBackups();
             return backupInfo;
         }
@@ -361,6 +392,7 @@ public class BackupService {
         }
 
         synchronized (backupLock) {
+            validateRestoreArchive(backupFile);
             Path databaseBasePath = resolveDatabaseBasePath();
             Path databaseDirectory = databaseBasePath.getParent();
             String databaseName = databaseBasePath.getFileName().toString();
@@ -376,15 +408,32 @@ public class BackupService {
                 }
 
                 databaseManager.closePool();
-                databaseManager.deleteDatabase();
                 if (databaseDirectory != null) {
                     Files.createDirectories(databaseDirectory);
                 }
-
-                for (Path restoredFile : restoredFiles) {
-                    Path target = (databaseDirectory != null ? databaseDirectory : Paths.get("."))
-                            .resolve(restoredFile.getFileName().toString());
-                    Files.move(restoredFile, target, StandardCopyOption.REPLACE_EXISTING);
+                // Keep original files even during corruption recovery; never delete them.
+                Path originalDirectory = Files.createTempDirectory(databaseDirectory, "before-restore-");
+                List<Path> originals = listRestoredDatabaseFiles(databaseDirectory, databaseName);
+                List<Path> movedOriginals = new ArrayList<>();
+                List<Path> installed = new ArrayList<>();
+                try {
+                    for (Path original : originals) {
+                        Files.move(original, originalDirectory.resolve(original.getFileName()));
+                        movedOriginals.add(original);
+                    }
+                    for (Path restoredFile : restoredFiles) {
+                        Path target = databaseDirectory.resolve(restoredFile.getFileName());
+                        Files.move(restoredFile, target);
+                        installed.add(target);
+                    }
+                    logger.info("Original database preserved at {}", originalDirectory);
+                } catch (Exception failure) {
+                    for (Path target : installed) Files.deleteIfExists(target);
+                    for (Path original : movedOriginals) {
+                        Files.move(originalDirectory.resolve(original.getFileName()), original,
+                                StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    throw failure;
                 }
             } catch (Exception e) {
                 throw new IOException("Failed to restore database from " + backupFile + ": " + e.getMessage(), e);
@@ -395,22 +444,12 @@ public class BackupService {
     }
 
     private void validateRestoreArchive(Path backupFile) throws IOException {
-        Path tempDirectory = Files.createTempDirectory("pasal-pos-restore-validate-");
-        String tempDbName = "validation_" + UUID.randomUUID().toString().replace("-", "");
+        inspectBackup(backupFile);
+    }
 
-        try {
-            Restore.execute(backupFile.toAbsolutePath().toString(), tempDirectory.toAbsolutePath().toString(),
-                    tempDbName);
-
-            List<Path> restoredFiles = listRestoredDatabaseFiles(tempDirectory, tempDbName);
-            if (restoredFiles.isEmpty()) {
-                throw new IOException("Selected file is not a valid H2 backup archive.");
-            }
-        } catch (Exception e) {
-            throw new IOException("Failed to validate restore archive: " + e.getMessage(), e);
-        } finally {
-            deleteRecursively(tempDirectory);
-        }
+    private Map<String, Map<String, Integer>> inspectBackup(Path backupFile) throws IOException {
+        return BackupSafety.inspectArchive(backupFile, config.getProperty("database.user"),
+                config.getProperty("database.password"));
     }
 
     private List<Path> listRestoredDatabaseFiles(Path directory, String databaseName) throws IOException {
@@ -738,6 +777,8 @@ public class BackupService {
                                 ZonedDateTime.ofInstant(backup.createdAt, ZoneId.systemDefault()))
                         + " (" + backup.trigger + ").\n\n"
                         + "Backup file:\n" + backup.path + "\n\n"
+                        + "Original database files are preserved in a before-restore folder beside the database.\n"
+                        + "Sales after this backup may require recovery from those files.\n"
                         + "Please verify your recent sales and sync status.";
             }
             return message != null ? message : "Database recovery failed.";
