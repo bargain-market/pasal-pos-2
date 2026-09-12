@@ -131,6 +131,9 @@ public class WebSocketMessageHandler {
                 case "stock_alert":
                     handleStockAlert(data);
                     break;
+                case "subscription_required":
+                    handleSubscriptionRequired(data);
+                    break;
                 default:
                     logger.warn("Unknown event type: {}", eventType);
             }
@@ -781,6 +784,57 @@ public class WebSocketMessageHandler {
 
         logger.warn("Stock alert from another device: {} ({}) - {} (stock: {})",
                 productName, productId, alertType, currentStock);
+    }
+
+    /**
+     * The server emits subscription_required right before disconnecting the
+     * device when the store subscription is unpaid/expired. Revoke the stored
+     * offline lease, stop business sync (every /pos/* business call now returns
+     * 402 anyway) and show a blocking message.
+     */
+    private void handleSubscriptionRequired(JsonObject data) {
+        String serverMessage = getStringOrNull(data, "message");
+        logger.warn("Server revoked POS access (subscription_required): {}", serverMessage);
+
+        // Clear the stored lease so offline entry paths are blocked too.
+        try {
+            com.pos.service.SubscriptionLeaseService.getInstance().markServerNoAccess("INACTIVE");
+        } catch (Exception e) {
+            logger.error("Failed to record subscription revocation", e);
+        }
+
+        // Stop business sync — inbound/outbound syncs and the realtime channel.
+        try {
+            SyncManager.getInstance().suspendBusinessSync();
+        } catch (Exception e) {
+            logger.error("Failed to suspend business sync", e);
+        }
+
+        final String userMessage = (serverMessage != null && !serverMessage.isBlank())
+                ? serverMessage
+                : "The store subscription is not active. Connect this device to the internet "
+                        + "and renew the subscription to continue.";
+
+        // Non-blocking notification for any UI listeners.
+        notifyNotificationListeners(new NotificationEvent("Subscription Required", userMessage, "error"));
+
+        // Blocking dialog — the POS cannot operate until the subscription is renewed.
+        Platform.runLater(() -> {
+            try {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.ERROR);
+                alert.setTitle("Subscription Required");
+                alert.setHeaderText("Store subscription is not active");
+                alert.setContentText(userMessage
+                        + "\n\nConnect this device to the internet and renew the subscription, "
+                        + "then restart the application.");
+                alert.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+                com.pos.util.DialogHelper.setAlertOwner(alert, com.pos.util.DialogHelper.getCurrentWindow());
+                alert.showAndWait();
+            } catch (Exception e) {
+                logger.warn("Could not show subscription required dialog", e);
+            }
+        });
     }
 
     // === Listener Management ===

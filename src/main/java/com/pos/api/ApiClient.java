@@ -155,6 +155,34 @@ public class ApiClient {
     }
     
     /**
+     * Make POST request authenticated with an explicit user JWT Bearer token.
+     * Used for endpoints that require a user token instead of device credentials —
+     * e.g. POST /pos/devices/register before any device key exists.
+     * The token is used for this call only and is not stored on the client.
+     */
+    public <T> ApiResponse<T> postWithUserToken(String endpoint, Object body, String userAccessToken,
+            Class<T> responseType) throws ApiException {
+        if (userAccessToken == null || userAccessToken.isEmpty()) {
+            throw new ApiException("A user login token is required for this request");
+        }
+        String url = resolveRequestUrl(endpoint);
+        Request.Builder builder = new Request.Builder().url(url);
+
+        builder.addHeader("Content-Type", "application/json");
+        builder.addHeader("Accept", "application/json");
+        builder.addHeader("Authorization", "Bearer " + userAccessToken);
+
+        if (body != null) {
+            String jsonBody = gson.toJson(body);
+            builder.method("POST", RequestBody.create(jsonBody, MediaType.get("application/json")));
+        } else {
+            builder.method("POST", null);
+        }
+
+        return executeRequest(builder.build(), responseType);
+    }
+
+    /**
      * Make GET request
      */
     public <T> ApiResponse<T> get(String endpoint, Class<T> responseType) throws ApiException {

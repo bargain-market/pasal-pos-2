@@ -167,6 +167,9 @@ public class ErrorHandler {
                     return "Invalid sale data.";
                 case "POS_BUS_005":
                     return "Product is out of stock.";
+                case "SUBSCRIPTION_REQUIRED":
+                    return message != null && !message.isEmpty() ? message
+                            : "Store subscription is not active. Connect to the internet to renew.";
             }
         }
 
@@ -176,6 +179,9 @@ public class ErrorHandler {
                 return message != null && !message.isEmpty() ? message : "Invalid request. Please check your input.";
             case 401:
                 return "Authentication failed. Please check your credentials.";
+            case 402:
+                return message != null && !message.isEmpty() ? message
+                        : "Subscription required. Connect to the internet and renew the store subscription.";
             case 403:
                 return "You don't have permission to perform this action.";
             case 404:

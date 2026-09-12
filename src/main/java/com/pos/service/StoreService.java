@@ -54,6 +54,10 @@ public class StoreService {
         if (deviceInfo.storeName != null) {
             config.setProperty("store.name", deviceInfo.storeName);
         }
+        if (deviceInfo.id != null && !deviceInfo.id.isEmpty()) {
+            // Backend device row id — used to bind subscription lease "sub" claims.
+            config.setProperty("device.db.id", deviceInfo.id);
+        }
         
         logger.info("Store information loaded: {} (ID: {})", deviceInfo.storeName, deviceInfo.storeId);
         return deviceInfo;

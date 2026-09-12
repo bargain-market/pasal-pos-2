@@ -410,6 +410,13 @@ public class WebSocketClient {
         socket.on("stock_alert", args -> {
             handleEvent("stock_alert", args);
         });
+
+        // Subscription enforcement — the server emits this right before
+        // disconnecting the device when the store subscription is unpaid/expired.
+        socket.on("subscription_required", args -> {
+            logger.warn("🚫 Received subscription_required event via WebSocket");
+            handleEvent("subscription_required", args);
+        });
     }
 
     /**

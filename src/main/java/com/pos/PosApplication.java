@@ -14,6 +14,7 @@ import com.pos.hardware.HardwareManager;
 import com.pos.config.ConfigManager;
 import com.pos.database.DatabaseManager;
 import com.pos.service.DeviceRegistrationService;
+import com.pos.service.SubscriptionLeaseService;
 import com.pos.service.UserAuthService;
 import com.pos.service.SettingsService;
 import com.pos.service.StoreService;
@@ -530,10 +531,31 @@ public class PosApplication extends Application {
                 switch (verificationResult) {
                     case VERIFIED:
                         logger.info("Device registration verified in background");
+                        // The device is online — refresh the subscription lease so
+                        // offline access tracks paidThrough, and block startup when
+                        // the server explicitly reports the subscription unpaid.
+                        SubscriptionLeaseService.RefreshResult leaseRefresh = SubscriptionLeaseService
+                                .getInstance().refreshLease();
+                        if (leaseRefresh == SubscriptionLeaseService.RefreshResult.NO_ACCESS) {
+                            logger.warn("Store subscription inactive per backend — blocking startup");
+                            javafx.application.Platform.runLater(() -> showSubscriptionRequiredScreen(
+                                    screenBounds, "The store subscription is not active."));
+                            break;
+                        }
                         refreshStoreInfoInBackground(startupTimeoutMs);
                         break;
                     case NETWORK_ERROR:
                         logger.warn("Backend unavailable during startup verification. Continuing in offline mode.");
+                        // Offline boot is only allowed while a verified signed
+                        // subscription lease permits offline access.
+                        SubscriptionLeaseService.LeaseCheckResult leaseCheck = SubscriptionLeaseService
+                                .getInstance().isOfflineAccessAllowed();
+                        if (leaseCheck != SubscriptionLeaseService.LeaseCheckResult.ALLOWED) {
+                            logger.warn("Offline startup blocked — lease check result: {}", leaseCheck);
+                            javafx.application.Platform.runLater(() -> showSubscriptionRequiredScreen(
+                                    screenBounds,
+                                    SubscriptionLeaseService.describeBlockReason(leaseCheck)));
+                        }
                         break;
                     case INVALID_CREDENTIALS:
                     case NOT_REGISTERED:
@@ -594,6 +616,122 @@ public class PosApplication extends Application {
             primaryStage.show();
             primaryStage.toFront();
         });
+    }
+
+    /**
+     * Blocking screen shown when the POS may not operate: the backend reported the
+     * store subscription as inactive, or the device booted offline without a valid
+     * signed subscription lease. The only way forward is to connect to the
+     * internet and renew/verify the subscription (Retry), or quit.
+     */
+    private void showSubscriptionRequiredScreen(Rectangle2D screenBounds, String reason) {
+        Label title = new Label("Store Subscription Required");
+        title.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #b00020;");
+
+        Label subtitle = new Label(
+                "This device cannot start selling because the store subscription is not active "
+                        + "or the offline access lease could not be verified.");
+        subtitle.setWrapText(true);
+        subtitle.setMaxWidth(640);
+        subtitle.setStyle("-fx-font-size: 14px;");
+
+        StringBuilder detailsText = new StringBuilder();
+        if (reason != null && !reason.isBlank()) {
+            detailsText.append(reason).append('\n');
+        }
+        try {
+            detailsText.append(SubscriptionLeaseService.getInstance().statusSummary());
+        } catch (Exception ignored) {
+        }
+        detailsText.append("\nConnect this device to the internet and press Retry once the "
+                + "subscription has been renewed.");
+
+        TextArea details = new TextArea(detailsText.toString());
+        details.setEditable(false);
+        details.setWrapText(true);
+        details.setPrefRowCount(6);
+        details.setMaxWidth(640);
+
+        Label statusLabel = new Label();
+        statusLabel.setStyle("-fx-text-fill: #555555;");
+
+        Button retryButton = new Button("Retry");
+        Button quitButton = new Button("Quit");
+
+        retryButton.setOnAction(e -> {
+            retryButton.setDisable(true);
+            statusLabel.setText("Checking subscription status...");
+            Thread retryThread = new Thread(() -> {
+                DeviceRegistrationService registrationService = DeviceRegistrationService.getInstance();
+                int timeoutMs = ConfigManager.getInstance()
+                        .getIntProperty("backend.api.timeout.startup", 4000);
+                boolean canProceed = false;
+                String failureMessage = "Still unable to confirm an active subscription.";
+                try {
+                    DeviceRegistrationService.VerificationResult verificationResult = registrationService
+                            .verifyDeviceRegistrationWithBackend(timeoutMs);
+                    SubscriptionLeaseService leaseService = SubscriptionLeaseService.getInstance();
+                    if (verificationResult == DeviceRegistrationService.VerificationResult.VERIFIED) {
+                        SubscriptionLeaseService.RefreshResult refreshResult = leaseService.refreshLease();
+                        canProceed = refreshResult == SubscriptionLeaseService.RefreshResult.REFRESHED
+                                || refreshResult == SubscriptionLeaseService.RefreshResult.ONLINE_ONLY;
+                        if (!canProceed) {
+                            failureMessage = "The store subscription is still not active. "
+                                    + "Renew it, then press Retry.";
+                        }
+                    } else if (verificationResult == DeviceRegistrationService.VerificationResult.NETWORK_ERROR) {
+                        canProceed = leaseService.isOfflineAccessAllowed()
+                                == SubscriptionLeaseService.LeaseCheckResult.ALLOWED;
+                        if (!canProceed) {
+                            failureMessage = "Still offline and no valid subscription lease. "
+                                    + "Connect to the internet to renew, then press Retry.";
+                        }
+                    } else {
+                        failureMessage = "Device registration is no longer valid — restart the app to re-register.";
+                    }
+                } catch (Exception ex) {
+                    logger.warn("Subscription retry check failed", ex);
+                }
+
+                final boolean proceed = canProceed;
+                final String message = failureMessage;
+                javafx.application.Platform.runLater(() -> {
+                    if (proceed) {
+                        logger.info("Subscription confirmed after retry — loading application UI");
+                        startNormalUi(primaryStage);
+                    } else {
+                        statusLabel.setText(message);
+                        retryButton.setDisable(false);
+                    }
+                });
+            }, "SubscriptionRetry");
+            retryThread.setDaemon(true);
+            retryThread.start();
+        });
+
+        quitButton.setOnAction(e -> {
+            stop();
+            System.exit(1);
+        });
+
+        HBox buttons = new HBox(12, retryButton, quitButton);
+        buttons.setAlignment(Pos.CENTER);
+
+        VBox root = new VBox(16, title, subtitle, details, buttons, statusLabel);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(40));
+        root.setStyle("-fx-background-color: white;");
+
+        Rectangle2D bounds = screenBounds != null
+                ? screenBounds
+                : com.pos.util.ResponsiveHelper.getScreenBounds();
+        Scene scene = new Scene(root, bounds.getWidth(), bounds.getHeight());
+        applySceneStyles(scene);
+
+        primaryStage.setTitle("Pasal POS 2 - Subscription Required");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+        primaryStage.toFront();
     }
 
     private void applySceneStyles(Scene scene) {
@@ -1019,7 +1157,12 @@ public class PosApplication extends Application {
         // This allows the app to trust system certificates (like those from Antivirus
         // or corporate proxies)
         if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
-            System.setProperty("javax.net.ssl.trustStoreType", "WINDOWS-ROOT");
+            try {
+                java.security.KeyStore.getInstance("WINDOWS-ROOT");
+                System.setProperty("javax.net.ssl.trustStoreType", "WINDOWS-ROOT");
+            } catch (java.security.KeyStoreException e) {
+                System.err.println("WINDOWS-ROOT keystore unavailable on this JVM; using default trust store");
+            }
         }
 
         launch(args);

@@ -68,6 +68,11 @@ public class UserAuthService {
 
         // First, try local database (offline-first approach)
         PosUserLoginResponse.PosUserInfo localUser = authenticatePosUserFromLocalDB(username, pin);
+        if (localUser != null && !ensureOfflineLoginAllowed(username)) {
+            // Backend reachable and grants access but issues no offline lease —
+            // fall through to the online backend login below.
+            localUser = null;
+        }
         if (localUser != null) {
             // Successfully authenticated from local DB
             this.currentPosUser = localUser;
@@ -138,9 +143,18 @@ public class UserAuthService {
             // Set token in ApiClient
             apiClient.setUserToken(accessToken);
 
+            // Renew the subscription lease in the background so offline access
+            // stays current (paidThrough renewals extend the lease expiry).
+            SubscriptionLeaseService.getInstance().refreshLeaseAsync();
+
             logger.info("POS user logged in successfully via backend: {} ({})", currentPosUser.fullName,
                     currentPosUser.username);
         } catch (ApiClient.ApiException e) {
+            // Backend enforces the subscription with 402 — surface it clearly
+            // instead of falling back to a generic login failure.
+            if (e.getStatusCode() == 402 || "SUBSCRIPTION_REQUIRED".equals(e.getErrorCode())) {
+                throw subscriptionRequiredException(e);
+            }
             // Backend login failed - if it's a network error, try offline again
             if (e.getStatusCode() >= 500 || e.getMessage().contains("network") || e.getMessage().contains("timeout")) {
                 logger.warn("Backend login failed, attempting offline login again: {}", e.getMessage());
@@ -205,9 +219,76 @@ public class UserAuthService {
     }
 
     /**
-     * Try offline POS user login using local database
+     * Decide whether a successful local-DB authentication may proceed as an
+     * offline login. Offline access requires a signed, unexpired subscription
+     * lease; a quick best-effort {@link SubscriptionLeaseService#refreshLease()}
+     * runs first so a renewed paidThrough immediately extends access.
+     *
+     * @return true when a verified lease allows the offline login; false when the
+     *         backend is reachable and grants access but cannot issue a lease
+     *         (online-only operation) — the caller should then continue to the
+     *         online backend login instead.
+     * @throws ApiClient.ApiException 402/SUBSCRIPTION_REQUIRED when offline access
+     *         is not allowed
      */
-    private boolean tryOfflinePosUserLogin(String username, String pin) {
+    private boolean ensureOfflineLoginAllowed(String username) throws ApiClient.ApiException {
+        SubscriptionLeaseService leaseService = SubscriptionLeaseService.getInstance();
+        SubscriptionLeaseService.RefreshResult refreshResult = leaseService.refreshLease();
+        SubscriptionLeaseService.LeaseCheckResult leaseCheck = leaseService.isOfflineAccessAllowed();
+        if (leaseCheck == SubscriptionLeaseService.LeaseCheckResult.ALLOWED) {
+            return true;
+        }
+        if (refreshResult == SubscriptionLeaseService.RefreshResult.ONLINE_ONLY
+                || refreshResult == SubscriptionLeaseService.RefreshResult.REFRESHED) {
+            // Backend is reachable and grants access — it either cannot issue
+            // offline leases (no signing key) or the stored lease failed
+            // verification. Continue to the online backend login; the server
+            // enforces the subscription itself with 402.
+            logger.info("Lease check {} after refresh result {} — using online backend login for {}",
+                    leaseCheck, refreshResult, username);
+            return false;
+        }
+        // NO_ACCESS (server explicitly said unpaid) or UNAVAILABLE (offline) with
+        // no valid lease — offline entry is not permitted.
+        logger.warn("Offline login blocked for {} — lease check result: {}", username, leaseCheck);
+        throw new ApiClient.ApiException(
+                SubscriptionLeaseService.OFFLINE_SUBSCRIPTION_MESSAGE, 402, "SUBSCRIPTION_REQUIRED");
+    }
+
+    /**
+     * Throw a 402 SUBSCRIPTION_REQUIRED error unless a verified stored lease
+     * currently allows offline access.
+     */
+    private void requireOfflineLeaseAllowed(String username) throws ApiClient.ApiException {
+        SubscriptionLeaseService.LeaseCheckResult leaseCheck = SubscriptionLeaseService.getInstance()
+                .isOfflineAccessAllowed();
+        if (leaseCheck != SubscriptionLeaseService.LeaseCheckResult.ALLOWED) {
+            logger.warn("Offline login blocked for {} — lease check result: {}", username, leaseCheck);
+            throw new ApiClient.ApiException(
+                    SubscriptionLeaseService.OFFLINE_SUBSCRIPTION_MESSAGE, 402, "SUBSCRIPTION_REQUIRED");
+        }
+    }
+
+    /**
+     * Build a clear "subscription required" exception from a backend 402 so the
+     * UI shows the billing message instead of a generic login failure.
+     */
+    private static ApiClient.ApiException subscriptionRequiredException(ApiClient.ApiException e) {
+        String serverMessage = e.getMessage();
+        String message = (serverMessage != null && !serverMessage.isBlank())
+                ? "Subscription required: " + serverMessage
+                : "Subscription required: the store subscription is not active. Contact your billing manager.";
+        return new ApiClient.ApiException(message, 402,
+                e.getErrorCode() != null ? e.getErrorCode() : "SUBSCRIPTION_REQUIRED");
+    }
+
+    /**
+     * Try offline POS user login using local database.
+     * Requires a verified signed subscription lease — the backend was already
+     * unreachable at this point, so the stored lease is evaluated as-is.
+     */
+    private boolean tryOfflinePosUserLogin(String username, String pin) throws ApiClient.ApiException {
+        requireOfflineLeaseAllowed(username);
         try {
             PosUserLoginResponse.PosUserInfo user = authenticatePosUserFromLocalDB(username, pin);
             if (user != null) {
@@ -483,6 +564,11 @@ public class UserAuthService {
 
         // First, try local database (offline-first approach)
         UserInfo localUser = authenticateUserFromLocalDB(email, password);
+        if (localUser != null && !ensureOfflineLoginAllowed(email)) {
+            // Backend reachable and grants access but issues no offline lease —
+            // fall through to the online backend login below.
+            localUser = null;
+        }
         if (localUser != null) {
             // Successfully authenticated from local DB
             this.currentUser = localUser;
@@ -543,13 +629,25 @@ public class UserAuthService {
             // Set token in ApiClient
             apiClient.setUserToken(accessToken);
 
+            // Renew the subscription lease in the background so offline access
+            // stays current (paidThrough renewals extend the lease expiry).
+            SubscriptionLeaseService.getInstance().refreshLeaseAsync();
+
             logger.info("User logged in successfully via backend: {} ({})", currentUser.fullName, currentUser.email);
         } catch (ApiClient.ApiException e) {
+            // Backend enforces the subscription with 402 — surface it clearly
+            // instead of falling back to a generic login failure.
+            if (e.getStatusCode() == 402 || "SUBSCRIPTION_REQUIRED".equals(e.getErrorCode())) {
+                throw subscriptionRequiredException(e);
+            }
             // Backend login failed - if it's a network error, try offline again
             if (e.getStatusCode() >= 500 || e.getMessage().contains("network") || e.getMessage().contains("timeout")) {
                 logger.warn("Backend login failed, attempting offline login again: {}", e.getMessage());
                 UserInfo offlineUser = authenticateUserFromLocalDB(email, password);
                 if (offlineUser != null) {
+                    // The backend was unreachable — a verified stored lease is
+                    // required before an offline session may be created.
+                    requireOfflineLeaseAllowed(email);
                     this.currentUser = offlineUser;
                     this.currentPosUser = null;
                     this.isPosUser = false;

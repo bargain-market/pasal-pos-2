@@ -3,6 +3,8 @@ package com.pos.service;
 import com.pos.api.ApiClient;
 import com.pos.api.dto.DeviceRegistrationRequest;
 import com.pos.api.dto.DeviceRegistrationResponse;
+import com.pos.api.dto.LoginRequest;
+import com.pos.api.dto.LoginResponse;
 import com.pos.config.ConfigManager;
 import com.pos.hardware.HardwareManager;
 import org.slf4j.Logger;
@@ -42,13 +44,34 @@ public class DeviceRegistrationService {
     }
 
     /**
-     * Register device with backend
+     * Authenticate a store manager before device registration.
+     * POST /pos/devices/register now requires a user JWT for a manager account
+     * with CONFIGURE_POS permission and membership in the target store — the open
+     * device-key registration flow no longer exists.
+     *
+     * @return the login response (token + manager's stores) for the registration call
+     */
+    public LoginResponse authenticateManager(String email, String password) throws ApiClient.ApiException {
+        ApiClient.ApiResponse<LoginResponse> response = apiClient.postPublic(
+                "/auth/login",
+                new LoginRequest(email, password),
+                LoginResponse.class);
+        return response.getData();
+    }
+
+    /**
+     * Register device with backend.
+     *
+     * @param managerAccessToken user JWT from {@link #authenticateManager}; sent as
+     *                           the Bearer token for the registration call (no
+     *                           device key exists yet). Used for this call only.
      */
     public DeviceRegistrationResponse registerDevice(
             String deviceName,
             String storeId,
             String registerNumber,
-            String locationInfo) throws ApiClient.ApiException {
+            String locationInfo,
+            String managerAccessToken) throws ApiClient.ApiException {
         // Check if this is a store change (re-registration to a different store)
         String previousStoreId = config.getProperty("store.id");
         boolean isStoreChange = previousStoreId != null && !previousStoreId.isEmpty()
@@ -78,10 +101,13 @@ public class DeviceRegistrationService {
         request.registerNumber = registerNumber;
         request.locationInfo = locationInfo;
 
-        // Call registration API
-        ApiClient.ApiResponse<DeviceRegistrationResponse> response = apiClient.post(
+        // Call registration API with the manager's user JWT (not a device key —
+        // none exists yet). The backend requires a manager account with
+        // CONFIGURE_POS permission and membership in the target store.
+        ApiClient.ApiResponse<DeviceRegistrationResponse> response = apiClient.postWithUserToken(
                 "/pos/devices/register",
                 request,
+                managerAccessToken,
                 DeviceRegistrationResponse.class);
 
         DeviceRegistrationResponse registrationResponse = response.getData();
@@ -94,6 +120,10 @@ public class DeviceRegistrationService {
 
             // Store device info
             config.setProperty("device.id", deviceId);
+            if (registrationResponse.device.id != null && !registrationResponse.device.id.isEmpty()) {
+                // Backend device row id — used to bind subscription lease "sub" claims.
+                config.setProperty("device.db.id", registrationResponse.device.id);
+            }
             config.setProperty("store.id", storeId);
             config.setProperty("device.name", deviceName);
             if (registerNumber != null) {
@@ -304,6 +334,14 @@ public class DeviceRegistrationService {
         // Clear user token as well (since device registration is invalid)
         apiClient.setUserToken("");
         config.setProperty("user.token", "");
+
+        // Clear the stored subscription lease — it was issued to this device/store
+        // binding and is meaningless for a different registration.
+        try {
+            SubscriptionLeaseService.getInstance().clearAllSubscriptionState();
+        } catch (Exception e) {
+            logger.warn("Could not clear subscription state during registration clear", e);
+        }
 
         // Also clear store-specific data from the database
         // This ensures a clean slate when re-registering

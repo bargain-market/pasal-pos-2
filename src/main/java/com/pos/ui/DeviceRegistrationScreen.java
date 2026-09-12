@@ -2,6 +2,8 @@ package com.pos.ui;
 
 import com.pos.service.DeviceRegistrationService;
 import com.pos.api.dto.DeviceRegistrationResponse;
+import com.pos.api.dto.LoginResponse;
+import com.pos.api.dto.StoreInfo;
 import com.pos.api.ApiClient;
 import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
@@ -29,10 +31,18 @@ public class DeviceRegistrationScreen extends StackPane {
     private com.pos.ui.components.TouchTextField registerNumberField;
     private com.pos.ui.components.TouchTextField locationField;
     private com.pos.ui.components.TouchTextField backendUrlField;
+    private com.pos.ui.components.TouchTextField managerEmailField;
+    private PasswordField managerPasswordField;
+    private ComboBox<String> storeComboBox;
     private Button registerButton;
     private Label statusLabel;
     private DeviceRegistrationService registrationService;
     private Stage stage;
+
+    // Manager session held only for the duration of the registration call —
+    // never persisted. Cleared on completion, failure, or credential edits.
+    private String managerAccessToken;
+    private final java.util.List<StoreInfo> managerStores = new java.util.ArrayList<>();
 
     public DeviceRegistrationScreen(Stage stage) {
         this.stage = stage;
@@ -108,6 +118,41 @@ public class DeviceRegistrationScreen extends StackPane {
                         "-fx-background-color: #f8f9fa;");
         backendUrlSection.getChildren().addAll(backendUrlLabel, backendUrlField);
 
+        // Manager account section — device registration now requires a user JWT
+        // for a manager account with CONFIGURE_POS permission and membership in
+        // the target store (the open device-key registration flow was removed).
+        VBox managerEmailSection = new VBox(8);
+        Label managerEmailLabel = new Label("MANAGER EMAIL");
+        managerEmailLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+        managerEmailLabel.setStyle("-fx-text-fill: #666;");
+        managerEmailField = com.pos.ui.components.TouchScreenComponents
+                .createTouchOnlyTextField("manager@example.com");
+        managerEmailField.setPromptText("manager@example.com");
+        managerEmailField.setKeyboardEnabled(true);
+        managerEmailField.getTextField().setPrefHeight(50);
+        managerEmailField.textProperty().addListener((obs, o, n) -> resetManagerSession());
+        managerEmailSection.getChildren().addAll(managerEmailLabel, managerEmailField);
+
+        VBox managerPasswordSection = new VBox(8);
+        Label managerPasswordLabel = new Label("MANAGER PASSWORD");
+        managerPasswordLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+        managerPasswordLabel.setStyle("-fx-text-fill: #666;");
+        managerPasswordField = new PasswordField();
+        managerPasswordField.setPromptText("Manager account password");
+        managerPasswordField.setPrefHeight(50);
+        managerPasswordField.setStyle(
+                "-fx-font-size: 16px; " +
+                        "-fx-padding: 12px 15px; " +
+                        "-fx-background-radius: 8; " +
+                        "-fx-border-radius: 8; " +
+                        "-fx-border-color: #ddd; " +
+                        "-fx-border-width: 2; " +
+                        "-fx-background-color: #f8f9fa;");
+        managerPasswordField.textProperty().addListener((obs, o, n) -> resetManagerSession());
+        managerPasswordSection.getChildren().addAll(managerPasswordLabel, managerPasswordField);
+
+        backendUrlField.textProperty().addListener((obs, o, n) -> resetManagerSession());
+
         // Device Name section
         VBox deviceNameSection = new VBox(8);
         Label deviceNameLabel = new Label("DEVICE NAME");
@@ -119,15 +164,23 @@ public class DeviceRegistrationScreen extends StackPane {
         deviceNameField.getTextField().setPrefHeight(50);
         deviceNameSection.getChildren().addAll(deviceNameLabel, deviceNameField);
 
-        // Store ID section
+        // Store section — a dropdown once the manager's stores are loaded,
+        // otherwise a free-text Store ID field.
         VBox storeIdSection = new VBox(8);
-        Label storeIdLabel = new Label("STORE ID");
+        Label storeIdLabel = new Label("STORE");
         storeIdLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
         storeIdLabel.setStyle("-fx-text-fill: #666;");
         storeIdField = com.pos.ui.components.TouchScreenComponents.createTouchOnlyTextField("Enter your store ID");
         storeIdField.setKeyboardEnabled(true);
         storeIdField.getTextField().setPrefHeight(50);
-        storeIdSection.getChildren().addAll(storeIdLabel, storeIdField);
+        storeComboBox = new ComboBox<>();
+        storeComboBox.setPromptText("Select your store");
+        storeComboBox.setMaxWidth(Double.MAX_VALUE);
+        storeComboBox.setPrefHeight(50);
+        storeComboBox.setVisible(false);
+        storeComboBox.setManaged(false);
+        StackPane storeInputStack = new StackPane(storeIdField, storeComboBox);
+        storeIdSection.getChildren().addAll(storeIdLabel, storeInputStack);
 
         // Register Number section (Optional)
         VBox registerNumberSection = new VBox(8);
@@ -186,6 +239,8 @@ public class DeviceRegistrationScreen extends StackPane {
         // Add fields to form
         formBox.getChildren().addAll(
                 backendUrlSection,
+                managerEmailSection,
+                managerPasswordSection,
                 deviceNameSection,
                 storeIdSection,
                 registerNumberSection,
@@ -223,15 +278,41 @@ public class DeviceRegistrationScreen extends StackPane {
         getChildren().add(scrollPane);
     }
 
+    /**
+     * Forget the held manager session whenever the credentials or backend URL
+     * change so the next attempt signs in again and the store list refreshes.
+     */
+    private void resetManagerSession() {
+        managerAccessToken = null;
+        managerStores.clear();
+        if (storeComboBox != null) {
+            storeComboBox.getItems().clear();
+            storeComboBox.setVisible(false);
+            storeComboBox.setManaged(false);
+        }
+    }
+
+    /**
+     * Show the manager's stores as a dropdown (used when the manager account has
+     * one or more stores from the login response).
+     */
+    private void showStorePicker(java.util.List<StoreInfo> stores) {
+        storeComboBox.getItems().clear();
+        for (StoreInfo store : stores) {
+            storeComboBox.getItems().add(store.name + " (" + store.id + ")");
+        }
+        storeComboBox.setVisible(true);
+        storeComboBox.setManaged(true);
+        if (stores.size() == 1) {
+            storeComboBox.getSelectionModel().select(0);
+        }
+    }
+
     private void handleRegistration() {
         // Validate fields
-        if (deviceNameField.getText().trim().isEmpty()) {
+        String deviceName = deviceNameField.getText().trim();
+        if (deviceName.isEmpty()) {
             showError("Device name is required");
-            return;
-        }
-
-        if (storeIdField.getText().trim().isEmpty()) {
-            showError("Store ID is required");
             return;
         }
 
@@ -241,22 +322,103 @@ public class DeviceRegistrationScreen extends StackPane {
             return;
         }
 
+        String managerEmail = managerEmailField.getText().trim();
+        if (managerEmail.isEmpty()) {
+            showError("Manager email is required — device registration requires a manager account");
+            return;
+        }
+
+        String managerPassword = managerPasswordField.getText();
+        if (managerPassword == null || managerPassword.isEmpty()) {
+            showError("Manager password is required");
+            return;
+        }
+
+        String registerNumber = registerNumberField.getText().trim();
+        String location = locationField.getText().trim();
+        // Capture UI state on the FX thread before going to a background thread
+        final int selectedStoreIndex = storeComboBox.getSelectionModel().getSelectedIndex();
+        final String manualStoreId = storeIdField.getText().trim();
+
         // Set backend URL
         ApiClient.getInstance().setBaseUrl(backendUrl);
 
         // Disable button during registration
         registerButton.setDisable(true);
-        statusLabel.setText("Registering device...");
+        statusLabel.setText(managerAccessToken == null ? "Signing in manager..." : "Registering device...");
         statusLabel.setStyle("-fx-text-fill: #2196F3;");
 
         // Perform registration in background thread
         new Thread(() -> {
             try {
+                if (managerAccessToken == null) {
+                    // Sign in the manager — the registration endpoint requires a
+                    // user JWT (CONFIGURE_POS permission + store membership).
+                    LoginResponse loginResponse = registrationService
+                            .authenticateManager(managerEmail, managerPassword);
+                    if (loginResponse == null || loginResponse.tokens == null
+                            || loginResponse.tokens.accessToken == null
+                            || loginResponse.tokens.accessToken.isEmpty()) {
+                        throw new ApiClient.ApiException("Manager login did not return a session token");
+                    }
+                    managerAccessToken = loginResponse.tokens.accessToken;
+                    managerStores.clear();
+                    if (loginResponse.stores != null) {
+                        managerStores.addAll(loginResponse.stores);
+                    }
+                }
+
+                // Resolve the target store: dropdown selection when the manager's
+                // stores were returned, otherwise the free-text Store ID field.
+                String storeId;
+                if (!managerStores.isEmpty()) {
+                    int idx = selectedStoreIndex;
+                    if (idx < 0 && managerStores.size() == 1) {
+                        idx = 0; // Single-store manager — use it automatically.
+                    }
+                    if (idx < 0) {
+                        // Multiple stores and nothing selected yet — reveal the
+                        // picker and wait for another REGISTER DEVICE press.
+                        javafx.application.Platform.runLater(() -> {
+                            showStorePicker(managerStores);
+                            statusLabel.setText("Your account manages multiple stores — "
+                                    + "select a store, then press REGISTER DEVICE again.");
+                            statusLabel.setStyle("-fx-text-fill: #2196F3;");
+                            registerButton.setDisable(false);
+                        });
+                        return;
+                    }
+                    storeId = managerStores.get(idx).id;
+                    int selectedIdx = idx;
+                    javafx.application.Platform.runLater(() -> {
+                        showStorePicker(managerStores);
+                        storeComboBox.getSelectionModel().select(selectedIdx);
+                    });
+                } else {
+                    storeId = manualStoreId;
+                }
+
+                if (storeId == null || storeId.isEmpty()) {
+                    javafx.application.Platform.runLater(() -> {
+                        showError("Store ID is required");
+                        registerButton.setDisable(false);
+                    });
+                    return;
+                }
+
+                String finalStoreId = storeId;
+                javafx.application.Platform.runLater(() -> statusLabel.setText("Registering device..."));
+
                 DeviceRegistrationResponse response = registrationService.registerDevice(
-                        deviceNameField.getText().trim(),
-                        storeIdField.getText().trim(),
-                        registerNumberField.getText().trim().isEmpty() ? null : registerNumberField.getText().trim(),
-                        locationField.getText().trim().isEmpty() ? null : locationField.getText().trim());
+                        deviceName,
+                        finalStoreId,
+                        registerNumber.isEmpty() ? null : registerNumber,
+                        location.isEmpty() ? null : location,
+                        managerAccessToken);
+
+                // The user token lived only for this registration call.
+                managerAccessToken = null;
+                managerStores.clear();
 
                 // Show success on JavaFX thread
                 javafx.application.Platform.runLater(() -> {
@@ -274,6 +436,15 @@ public class DeviceRegistrationScreen extends StackPane {
                                     .getInstance();
                             storeService.fetchStoreInfo();
                             logger.info("Store information fetched after registration");
+
+                            // Fetch the signed subscription lease so offline
+                            // access is ready immediately after registration.
+                            try {
+                                com.pos.service.SubscriptionLeaseService.getInstance().refreshLease();
+                            } catch (Exception leaseError) {
+                                logger.warn("Subscription lease fetch after registration failed: {}",
+                                        leaseError.getMessage());
+                            }
 
                             // Trigger initial sync to fetch users and other data from backend
                             logger.info("Starting initial sync after device registration...");
@@ -371,8 +542,25 @@ public class DeviceRegistrationScreen extends StackPane {
                         }
                     }).start();
                 });
+            } catch (ApiClient.ApiException e) {
+                logger.error("Registration failed", e);
+                // Never retain the manager token past a registration attempt.
+                managerAccessToken = null;
+                managerStores.clear();
+                javafx.application.Platform.runLater(() -> {
+                    String message = e.getMessage();
+                    if (e.getStatusCode() == 401) {
+                        message = "Manager sign-in failed: " + message;
+                    }
+                    // 403 surfaces the server message (e.g. "Only a store billing
+                    // manager may register devices for this store").
+                    showError("Registration failed: " + (message != null ? message : "unknown error"));
+                    registerButton.setDisable(false);
+                });
             } catch (Exception e) {
                 logger.error("Registration failed", e);
+                managerAccessToken = null;
+                managerStores.clear();
                 javafx.application.Platform.runLater(() -> {
                     showError("Registration failed: " + e.getMessage());
                     registerButton.setDisable(false);

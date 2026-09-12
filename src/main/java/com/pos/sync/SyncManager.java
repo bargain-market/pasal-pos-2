@@ -94,6 +94,8 @@ public class SyncManager {
     private static final int MAX_RETRIES = 3;
     private static final int BASE_RETRY_DELAY_MS = 1000;
     private static final int SYNC_CHECK_INTERVAL_SECONDS = 60; // Check for stuck syncs every minute
+    private static final int LEASE_REFRESH_INITIAL_DELAY_MINUTES = 5; // First lease renewal after startup
+    private static final int LEASE_REFRESH_INTERVAL_MINUTES = 360; // Renew lease every 6 hours
 
     /** Max wait for in-flight outbound sync before forced manual sync. */
     private static final int FORCED_OUTBOUND_WAIT_MS = 300_000;
@@ -117,6 +119,8 @@ public class SyncManager {
     private final AtomicBoolean outboundRequested = new AtomicBoolean(false);
     private final AtomicBoolean outboundTaskQueued = new AtomicBoolean(false);
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
+    /** Set when the server reports SUBSCRIPTION_REQUIRED — business sync stops until renewal. */
+    private final AtomicBoolean businessSyncSuspended = new AtomicBoolean(false);
     private volatile Instant lastInboundSync = null;
     private volatile Instant lastOutboundSync = null;
     
@@ -258,6 +262,14 @@ public class SyncManager {
                 SYNC_CHECK_INTERVAL_SECONDS,
                 TimeUnit.SECONDS);
 
+        // Periodically renew the signed subscription lease so paidThrough
+        // renewals extend offline access while the backend is reachable.
+        scheduler.scheduleWithFixedDelay(
+                this::refreshSubscriptionLease,
+                LEASE_REFRESH_INITIAL_DELAY_MINUTES,
+                LEASE_REFRESH_INTERVAL_MINUTES,
+                TimeUnit.MINUTES);
+
         logger.info("✅ SyncManager initialized with WebSocket-only real-time sync (failsafe polling enabled)");
     }
 
@@ -304,6 +316,9 @@ public class SyncManager {
             if (isOnline && !isShuttingDown.get()) {
                 triggerOutboundSync();
                 if (!wasOnline) {
+                    // Successful reconnect — renew the subscription lease so
+                    // offline access tracks the latest paidThrough.
+                    safeExecute(this::refreshSubscriptionLease);
                     webSocketClient.resetReconnectState();
                 }
                 if (!isWebSocketConnected && !webSocketClient.isReconnectExhausted()) {
@@ -318,7 +333,8 @@ public class SyncManager {
         }
 
         if (isOnline && !isWebSocketConnected && hasWebSocketCredentials()
-                && !isShuttingDown.get() && !webSocketClient.isReconnectExhausted()) {
+                && !isShuttingDown.get() && !businessSyncSuspended.get()
+                && !webSocketClient.isReconnectExhausted()) {
             logger.debug("Ensuring WebSocket connection while backend is reachable");
             webSocketClient.connect();
         }
@@ -363,7 +379,8 @@ public class SyncManager {
             return;
         }
 
-        if (isOnline && !isWebSocketConnected && !webSocketClient.isReconnectExhausted()) {
+        if (isOnline && !isWebSocketConnected && !businessSyncSuspended.get()
+                && !webSocketClient.isReconnectExhausted()) {
             logger.info("Attempting WebSocket reconnection...");
             webSocketClient.connect();
         }
@@ -379,6 +396,72 @@ public class SyncManager {
         }
         webSocketClient.resetReconnectState();
         webSocketClient.connect();
+    }
+
+    /**
+     * Renew the signed subscription lease via GET /pos/subscription.
+     * Scheduled every {@link #LEASE_REFRESH_INTERVAL_MINUTES} and run on every
+     * successful reconnect so a renewed paidThrough extends offline access.
+     * Also resumes business sync after a subscription_required suspension once
+     * the server grants access again.
+     */
+    private void refreshSubscriptionLease() {
+        try {
+            com.pos.service.SubscriptionLeaseService.RefreshResult result = com.pos.service.SubscriptionLeaseService
+                    .getInstance().refreshLease();
+            switch (result) {
+                case REFRESHED:
+                    logger.info("Subscription lease renewed — offline access extended");
+                    break;
+                case ONLINE_ONLY:
+                    logger.info("Subscription active; backend issued no offline lease (online-only mode)");
+                    break;
+                case NO_ACCESS:
+                    logger.warn("Store subscription inactive per backend");
+                    break;
+                case UNAVAILABLE:
+                default:
+                    logger.debug("Subscription lease refresh skipped (backend unreachable)");
+                    break;
+            }
+
+            if ((result == com.pos.service.SubscriptionLeaseService.RefreshResult.REFRESHED
+                    || result == com.pos.service.SubscriptionLeaseService.RefreshResult.ONLINE_ONLY)
+                    && businessSyncSuspended.compareAndSet(true, false)) {
+                logger.info("Business sync resumed after subscription renewal");
+                if (isOnline) {
+                    webSocketClient.resetReconnectState();
+                    webSocketClient.connect();
+                }
+                notifyStatusListeners();
+            }
+        } catch (Exception e) {
+            logger.debug("Subscription lease refresh skipped: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Suspend all business sync (inbound + outbound). Invoked when the server
+     * reports SUBSCRIPTION_REQUIRED — every /pos/* business call would return 402
+     * anyway, and the server disconnects the realtime channel.
+     */
+    public void suspendBusinessSync() {
+        if (businessSyncSuspended.compareAndSet(false, true)) {
+            logger.warn("Business sync suspended — server reported SUBSCRIPTION_REQUIRED");
+            try {
+                webSocketClient.disconnect();
+            } catch (Exception e) {
+                logger.debug("WebSocket disconnect during sync suspension failed", e);
+            }
+            notifyStatusListeners();
+        }
+    }
+
+    /**
+     * Whether business sync is suspended pending subscription renewal.
+     */
+    public boolean isBusinessSyncSuspended() {
+        return businessSyncSuspended.get();
     }
 
     /**
@@ -432,6 +515,12 @@ public class SyncManager {
             isInboundSyncing.set(false);
             logger.debug("Device offline, skipping inbound sync");
             return new SyncResult(SyncDirection.INBOUND, 0, 0, "Device offline");
+        }
+
+        if (businessSyncSuspended.get()) {
+            isInboundSyncing.set(false);
+            logger.warn("Business sync suspended (subscription required), skipping inbound sync");
+            return new SyncResult(SyncDirection.INBOUND, 0, 0, "Sync suspended — subscription required");
         }
 
         logger.info("Starting {} inbound sync...", fullSync ? "full" : "incremental");
@@ -510,6 +599,12 @@ public class SyncManager {
             return new SyncResult(SyncDirection.OUTBOUND, 0, 0, "Device offline");
         }
 
+        if (businessSyncSuspended.get()) {
+            isOutboundSyncing.set(false);
+            logger.warn("Business sync suspended (subscription required), skipping outbound sync");
+            return new SyncResult(SyncDirection.OUTBOUND, 0, 0, "Sync suspended — subscription required");
+        }
+
         logger.debug("Processing outbound sync handlers...");
 
         int totalSynced = 0;
@@ -578,6 +673,9 @@ public class SyncManager {
      * queues in repeated passes until empty, stuck, or max rounds.
      */
     public ForcedOutboundSyncResult performForcedOutboundSync() {
+        if (businessSyncSuspended.get()) {
+            return new ForcedOutboundSyncResult(0, 0, 0, "Sync suspended — subscription required");
+        }
         if (!isOnline) {
             return new ForcedOutboundSyncResult(0, 0, 0, "Device offline");
         }
@@ -651,7 +749,7 @@ public class SyncManager {
      * Useful for triggering outbound sync after inbound sync completes.
      */
     public void triggerOutboundSync() {
-        if (isShuttingDown.get() || scheduler.isShutdown()) return;
+        if (isShuttingDown.get() || scheduler.isShutdown() || businessSyncSuspended.get()) return;
         outboundRequested.set(true);
         if (!outboundTaskQueued.compareAndSet(false, true)) return;
         try {
