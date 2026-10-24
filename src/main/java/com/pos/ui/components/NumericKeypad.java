@@ -273,8 +273,7 @@ public class NumericKeypad extends VBox {
             keyBtn.getStyleClass().add("keypad-number-button");
         }
 
-        keyBtn.setOnAction(e -> {
-            e.consume();
+        Runnable dispatch = () -> {
             long now = System.nanoTime();
             if (key.equals(lastActionKey) && now - lastActionAtNanos < DUPLICATE_ACTION_GUARD_NANOS) {
                 return;
@@ -288,10 +287,18 @@ public class NumericKeypad extends VBox {
             if ((ENTER_KEY.equals(key) || "ENTER".equals(key)) && enterListener != null) {
                 enterListener.onEnterPressed();
             }
-        });
+        };
 
-        keyBtn.setOnMousePressed(e -> e.consume());
-        keyBtn.setOnMouseReleased(e -> e.consume());
+        keyBtn.setOnTouchReleased(e -> {
+            e.consume();
+            dispatch.run();
+        });
+        keyBtn.setOnMouseClicked(e -> {
+            e.consume();
+            if (!e.isSynthesized()) {
+                dispatch.run();
+            }
+        });
         return keyBtn;
     }
 
