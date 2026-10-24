@@ -178,6 +178,7 @@ public class SalesScreen extends BorderPane {
     private Label cartHeaderItemCountLabel;
     private Label inputDisplayLabel;
     private StringBuilder inputBuffer = new StringBuilder();
+    private static final int MAX_INPUT_LENGTH = 10;
     private Label subtotalLabel;
     private Label taxLabel;
     private Label discountLabel;
@@ -592,9 +593,21 @@ public class SalesScreen extends BorderPane {
         inputDisplayLabel.setMinHeight(32);
         inputDisplayLabel.setPrefHeight(36);
 
+        // Keep decimal entry available for open-item prices. Quantity is a
+        // separate action so entering an amount such as 5.60 is unambiguous.
+        Button quantityButton = new Button(NumericKeypad.QTY_KEY);
+        quantityButton.getStyleClass().add("keypad-qty-button");
+        quantityButton.setMinWidth(72);
+        quantityButton.setPrefHeight(36);
+        quantityButton.setFocusTraversable(false);
+        quantityButton.setOnAction(e -> handleKeypadInput(NumericKeypad.QTY_KEY));
+
+        HBox inputRow = new HBox(6, inputDisplayLabel, quantityButton);
+        inputRow.setAlignment(Pos.CENTER);
+        HBox.setHgrow(inputDisplayLabel, Priority.ALWAYS);
+
         // Compact Keypad for small screens - Height adjusted to prevent overlap
         NumericKeypad keypad = new NumericKeypad(true, true, false);
-        keypad.setShowQtyButton(true);
         keypad.setListener(this::handleKeypadInput);
         keypad.setEnterListener(this::handleEnterPressed);
         keypad.getStyleClass().add("touch-mega-keypad");
@@ -603,7 +616,7 @@ public class SalesScreen extends BorderPane {
         keypad.setMaxHeight(260);
         VBox.setVgrow(keypad, Priority.NEVER);
 
-        keypadSection.getChildren().addAll(multiplierLabel, inputDisplayLabel, keypad);
+        keypadSection.getChildren().addAll(multiplierLabel, inputRow, keypad);
         VBox.setVgrow(keypadSection, Priority.NEVER);
 
         panel.getChildren().addAll(
@@ -1885,12 +1898,20 @@ public class SalesScreen extends BorderPane {
         } else if (NumericKeypad.QTY_KEY.equals(key) || "\u00D7".equals(key) || "X".equals(key) || "x".equals(key)) {
             setQuantityMultiplier();
         } else if (".".equals(key)) {
-            // Ignore decimal point - we handle cents automatically
+            if (inputBuffer.indexOf(".") < 0 && inputBuffer.length() < MAX_INPUT_LENGTH - 1) {
+                if (inputBuffer.length() == 0) {
+                    inputBuffer.append('0');
+                }
+                inputBuffer.append('.');
+            }
         } else if ("\u21B5".equals(key) || "ENTER".equals(key)) {
             // Ignore enter key - handled separately by handleEnterPressed
         } else {
-            // Append digit(s) to buffer
-            if (inputBuffer.length() < 10) {
+            int decimalIndex = inputBuffer.indexOf(".");
+            int fractionalLength = decimalIndex >= 0
+                    ? inputBuffer.length() - decimalIndex - 1
+                    : 0;
+            if (fractionalLength < 2 && inputBuffer.length() + key.length() <= MAX_INPUT_LENGTH) {
                 inputBuffer.append(key);
             }
         }
@@ -1920,7 +1941,7 @@ public class SalesScreen extends BorderPane {
         // The QTY key treats the current entry as a whole-number item count
         // (e.g. type "4" then QTY -> the next scanned item is added x4),
         // not as a currency amount, so parse the raw digits directly.
-        if (inputBuffer.length() == 0) {
+        if (inputBuffer.length() == 0 || inputBuffer.indexOf(".") >= 0) {
             return;
         }
         try {
@@ -1948,10 +1969,7 @@ public class SalesScreen extends BorderPane {
             inputDisplayLabel.setText("0.00");
         } else {
             try {
-                // Parse as cents and format as currency
-                long cents = Long.parseLong(inputBuffer.toString());
-                BigDecimal amount = new BigDecimal(cents).divide(new BigDecimal(100), 2,
-                        java.math.RoundingMode.HALF_UP);
+                BigDecimal amount = parseInputValue();
                 NumberFormat currencyFormat = NumberFormat.getCurrencyInstance();
                 inputDisplayLabel.setText(currencyFormat.format(amount));
             } catch (NumberFormatException e) {
@@ -1964,12 +1982,18 @@ public class SalesScreen extends BorderPane {
         if (inputBuffer.length() == 0)
             return BigDecimal.ZERO;
         try {
-            // Parse as cents and convert to dollars
-            long cents = Long.parseLong(inputBuffer.toString());
-            return new BigDecimal(cents).divide(new BigDecimal(100), 2, java.math.RoundingMode.HALF_UP);
+            return parseInputValue();
         } catch (NumberFormatException e) {
             return BigDecimal.ZERO;
         }
+    }
+
+    private BigDecimal parseInputValue() {
+        if (inputBuffer.indexOf(".") >= 0) {
+            return new BigDecimal(inputBuffer.toString()).setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+        long cents = Long.parseLong(inputBuffer.toString());
+        return new BigDecimal(cents).movePointLeft(2).setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     private void clearInput() {
