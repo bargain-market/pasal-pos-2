@@ -35,6 +35,9 @@ public class NumericKeypad extends VBox {
     private boolean showEnterButton;
     private boolean showPinIndicator;
     private boolean showQtyButton;
+    private static final long DUPLICATE_ACTION_GUARD_NANOS = 100_000_000L;
+    private long lastActionAtNanos;
+    private String lastActionKey;
     private int maxPinLength = 6;
     private int currentPinLength = 0;
     private HBox pinIndicatorBox;
@@ -272,6 +275,12 @@ public class NumericKeypad extends VBox {
 
         keyBtn.setOnAction(e -> {
             e.consume();
+            long now = System.nanoTime();
+            if (key.equals(lastActionKey) && now - lastActionAtNanos < DUPLICATE_ACTION_GUARD_NANOS) {
+                return;
+            }
+            lastActionKey = key;
+            lastActionAtNanos = now;
             playPressAnimation(keyBtn);
             if (listener != null) {
                 listener.onKeyPressed(key);
