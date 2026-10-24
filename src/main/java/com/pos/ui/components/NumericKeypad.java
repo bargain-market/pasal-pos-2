@@ -289,16 +289,16 @@ public class NumericKeypad extends VBox {
             }
         };
 
-        keyBtn.setOnTouchReleased(e -> {
+        // Use JavaFX's single Button action for both mouse and touch input.
+        // Some Windows touch drivers report one gesture as both touch and a
+        // non-synthesized mouse click, so dispatching both event types doubles
+        // the entered key and can hit an adjacent key.
+        keyBtn.setOnAction(e -> {
             e.consume();
             dispatch.run();
         });
-        keyBtn.setOnMouseClicked(e -> {
-            e.consume();
-            if (!e.isSynthesized()) {
-                dispatch.run();
-            }
-        });
+        keyBtn.setOnMousePressed(e -> e.consume());
+        keyBtn.setOnMouseReleased(e -> e.consume());
         return keyBtn;
     }
 
