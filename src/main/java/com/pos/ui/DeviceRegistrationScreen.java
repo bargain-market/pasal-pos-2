@@ -105,7 +105,10 @@ public class DeviceRegistrationScreen extends StackPane {
         backendUrlField = com.pos.ui.components.TouchScreenComponents
                 .createTouchOnlyTextField("https://your-backend-url.com/api/v1");
         backendUrlField.setPromptText("https://your-backend-url.com/api/v1");
-        backendUrlField.setText("http://localhost:3000/api/v1");
+        // Keep the URL saved by the current installation.  The previous hardcoded
+        // localhost value silently replaced a valid production URL every time the
+        // registration screen opened after an update.
+        backendUrlField.setText(ApiClient.getInstance().getBaseUrl());
         backendUrlField.setKeyboardEnabled(true);
         backendUrlField.setPrefHeight(50);
         backendUrlField.setStyle(

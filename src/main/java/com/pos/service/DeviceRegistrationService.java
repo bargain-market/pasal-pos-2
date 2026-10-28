@@ -77,13 +77,11 @@ public class DeviceRegistrationService {
         boolean isStoreChange = previousStoreId != null && !previousStoreId.isEmpty()
                 && !previousStoreId.equals(storeId);
 
+        boolean shouldResetLocalData = isStoreChange || previousStoreId == null || previousStoreId.isEmpty();
         if (isStoreChange) {
-            logger.info("Detected store change from {} to {}, clearing local store data", previousStoreId, storeId);
-            clearStoreDataForReregistration();
-        } else if (previousStoreId == null || previousStoreId.isEmpty()) {
-            // Fresh registration - also clear any stale data from previous installations
-            logger.info("Fresh device registration to store {}, clearing any stale local data", storeId);
-            clearStoreDataForReregistration();
+            logger.info("Detected store change from {} to {}", previousStoreId, storeId);
+        } else if (shouldResetLocalData) {
+            logger.info("Fresh registration to store {}", storeId);
         }
 
         // Generate or get device ID
@@ -128,6 +126,13 @@ public class DeviceRegistrationService {
             config.setProperty("device.name", deviceName);
             if (registerNumber != null) {
                 config.setProperty("register.number", registerNumber);
+            }
+
+            // Do not delete local data until the backend has accepted the new
+            // registration.  A failed request must leave pending sales and local
+            // credentials recoverable.
+            if (shouldResetLocalData) {
+                clearStoreDataForReregistration();
             }
 
             logger.info("Device registered successfully: {}", deviceId);
@@ -322,14 +327,10 @@ public class DeviceRegistrationService {
         // Clear credentials in ApiClient
         apiClient.setCredentials("", "");
 
-        // Clear all registration-related properties
+        // Clear only secrets and the session. Keep the device/store identity so a
+        // re-registration to the same store can reuse the device and local data.
         config.setProperty("api.key", "");
         config.setProperty("api.secret", "");
-        config.setProperty("device.id", "");
-        config.setProperty("store.id", "");
-        config.setProperty("device.name", "");
-        config.setProperty("register.number", "");
-        config.setProperty("store.name", "");
 
         // Clear user token as well (since device registration is invalid)
         apiClient.setUserToken("");
@@ -341,16 +342,6 @@ public class DeviceRegistrationService {
             SubscriptionLeaseService.getInstance().clearAllSubscriptionState();
         } catch (Exception e) {
             logger.warn("Could not clear subscription state during registration clear", e);
-        }
-
-        // Also clear store-specific data from the database
-        // This ensures a clean slate when re-registering
-        try {
-            com.pos.database.DatabaseManager.getInstance().clearStoreData();
-            logger.info("Store data cleared along with registration credentials");
-        } catch (Exception e) {
-            logger.error("Error clearing store data during credential clear", e);
-            // Continue even if this fails
         }
 
         logger.info("Device registration credentials cleared");
